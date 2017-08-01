@@ -1,4 +1,5 @@
-import akka.actor.Props
+import ReduceWorkerImpl.RequestTrackReducer
+import akka.actor.{Props, Terminated}
 import com.google.maps.model.DirectionsResult
 /**
   * Created by stefanos on 5/5/17.
@@ -36,6 +37,15 @@ class MasterImpl extends Master{
 
   override def receive: Receive = {
     case CreateInfrastracture =>
-
+      log.info("Creating mappers group actor.")
+      val mappersGroupActor = context.actorOf(MappersGroup.props)
+      context.watch(mappersGroupActor)
+      mappersGroupActor ! RequestTrackReducer("havana")
+      mappersGroupActor ! RequestTrackReducer("saoPaolo")
+      mappersGroupActor ! RequestTrackReducer("athens")
+      mappersGroupActor ! RequestTrackReducer("jamaica")
+      log.info("Creating mappers group actor.")
+      val reducersGroupActor = context.actorOf(ReducersGroup.props)
+      reducersGroupActor ! RequestTrackReducer("moscow")
   }
 }
