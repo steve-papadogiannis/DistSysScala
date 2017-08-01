@@ -1,9 +1,10 @@
+import akka.actor.{Actor, ActorLogging}
 import com.google.maps.model.DirectionsResult
 
 /**
   * Created by stefanos on 5/5/17.
   */
-trait Master {
+trait Master extends Actor with ActorLogging {
   def initialize(): Unit
 
   def waitForNewQueriesThread(): Unit
