@@ -1,5 +1,4 @@
-import ReduceWorkerImpl.RequestTrackReducer
-import akka.actor.{Props, Terminated}
+import akka.actor.Props
 import com.google.maps.model.DirectionsResult
 /**
   * Created by stefanos on 5/5/17.
@@ -44,7 +43,7 @@ class MasterImpl extends Master{
       mappersGroupActor ! RequestTrackReducer("saoPaolo")
       mappersGroupActor ! RequestTrackReducer("athens")
       mappersGroupActor ! RequestTrackReducer("jamaica")
-      log.info("Creating mappers group actor.")
+      log.info("Creating reducers group actor.")
       val reducersGroupActor = context.actorOf(ReducersGroup.props)
       reducersGroupActor ! RequestTrackReducer("moscow")
   }

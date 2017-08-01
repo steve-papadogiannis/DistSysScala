@@ -11,5 +11,6 @@ class AndroidServer extends Actor with ActorLogging {
     case CreateInfrastracture =>
       val master = context.actorOf(MasterImpl.props)
       master ! CreateInfrastracture
+    // todo cases for android client
   }
 }
