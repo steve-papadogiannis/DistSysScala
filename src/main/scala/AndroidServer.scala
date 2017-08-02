@@ -4,7 +4,7 @@ import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 
 object AndroidServer {
   def props: Props = Props(new  AndroidServer)
-  final case class CalculateDirections(startLat: Double, startLong: Double, endLat: Double, endLong: Double)
+  final case class CalculateDirections(requestId: Long, startLat: Double, startLong: Double, endLat: Double, endLong: Double)
 }
 
 class AndroidServer extends Actor with ActorLogging {

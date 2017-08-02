@@ -16,34 +16,18 @@ object MapWorker {
   object MapperRegistered
   object AcknowledgeMaster
   case class CalculateReduction(finalResult: Any)
+  case class RespondMapResults(request: CalculateDirections, valueOption: List[Map[GeoPointPair, DirectionsResult]])
 }
 
 class MapWorker(mapperId: String, reducersGroupActorRef: ActorRef, masterActorRef: ActorRef) extends Actor with ActorLogging {
-  var lastTemperatureReading: Option[Double] = None
   override def preStart(): Unit = log.info("Mapper actor {} started", mapperId)
   override def postStop(): Unit = log.info("Mapper actor {} stopped", mapperId)
-
-  def sendToReducer(finalResult: Any): Any = {
-    reducersGroupActorRef ! CalculateReduction(finalResult)
-  }
-
-  def notifyMaster(): Unit = {
-    masterActorRef ! AcknowledgeMaster
-  }
-
   override def receive: Receive = {
     case RequestTrackMapper(_) =>
       sender() ! MapperRegistered
-    case RecordTemperature(id, value) =>
-      log.info("Recorded temperature reading with {}", value, id)
-      lastTemperatureReading = Some(value)
-      sender() ! TemperatureRecorded(id)
-    case ReadTemperature(id) =>
-      sender() ! RespondTemperature(id, lastTemperatureReading)
-    case CalculateDirections(startLat, startLong, endLat, endLong) =>
+    case request @ CalculateDirections(requestId, startLat, startLong, endLat, endLong) =>
       val finalResult = map(new GeoPoint(startLat, startLong), new GeoPoint(endLat, endLong))
-      sendToReducer(finalResult)
-      notifyMaster()
+      sender() ! RespondMapResults(request, finalResult)
   }
 
   def calculateHash(str: String): Long = {
@@ -81,7 +65,7 @@ class MapWorker(mapperId: String, reducersGroupActorRef: ActorRef, masterActorRe
     decimalFormat.format(number).toDouble
   }
 
-  def map(startGeoPoint: GeoPoint, endGeoPoint: GeoPoint): Any = {
+  def map(startGeoPoint: GeoPoint, endGeoPoint: GeoPoint): List[Map[GeoPointPair, DirectionsResult]] = {
     val filename = "5555_directions"
     val mapper = new ObjectMapper()
     val result: List[DirectionsResultWrapper] = Source.fromFile(filename).getLines.map(line => mapper.readValue(line, classOf[DirectionsResultWrapper])).toList

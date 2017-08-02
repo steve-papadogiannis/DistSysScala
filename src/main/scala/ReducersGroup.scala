@@ -5,7 +5,7 @@ import akka.actor.{Actor, ActorLogging, ActorRef, Props, Terminated}
 import scala.concurrent.duration._
 
 object ReducersGroup {
-  def props: Props = Props(new ReducersGroup)
+  def props(mappersGroupActorRef: ActorRef, masterActorRef: ActorRef): Props = Props(new ReducersGroup)
   final case class RequestReducerList(requestId: Long)
   final case class ReplyReducerList(requestId: Long, ids: Set[String])
   sealed trait ReducerResult
@@ -15,6 +15,9 @@ object ReducersGroup {
   case object ReducerTimedOut extends ReducerResult
   final case class RequestAllReduceResults(requestId: Long)
   final case class RespondAllReduceResults(requestId: Long, results: Map[String, ReducerResult])
+
+  case class MapResult(value: Any)
+
 }
 
 class ReducersGroup extends Actor with ActorLogging {

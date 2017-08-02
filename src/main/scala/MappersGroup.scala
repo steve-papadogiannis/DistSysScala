@@ -1,8 +1,8 @@
 import AndroidServer.CalculateDirections
-import MappersGroup.{ReplyMapperList, RequestAllMapResults, RequestMapperList}
+import MappersGroup.{ReplyMapperList, RequestMapperList}
 import Master.RequestTrackMapper
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Terminated}
-
+import com.google.maps.model.DirectionsResult
 import scala.concurrent.duration._
 
 object MappersGroup {
@@ -10,18 +10,16 @@ object MappersGroup {
   final case class RequestMapperList(requestId: Long)
   final case class ReplyMapperList(requestId: Long, ids: Set[String])
   sealed trait MapperResult
-  final case class Result(value: Double) extends MapperResult
+  final case class ConcreteResult(value: List[Map[GeoPointPair, DirectionsResult]]) extends MapperResult
   case object ResultNotAvailable extends MapperResult
   case object MapperNotAvailable extends MapperResult
   case object MapperTimedOut extends MapperResult
-  final case class RequestAllMapResults(requestId: Long)
-  final case class RespondAllMapResults(requestId: Long, results: Map[String, MapperResult])
+  final case class RespondAllMapResults(request: CalculateDirections, results: Map[String, MapperResult])
 }
 
 class MappersGroup(reducersGroupActorRef: ActorRef, masterActorRef: ActorRef) extends Actor with ActorLogging {
   var mapperIdToActor = Map.empty[String, ActorRef]
   var actorToMapperId = Map.empty[ActorRef, String]
-  var nextCollectionId = 0L
   override def preStart(): Unit = log.info("MappersGroup started")
   override def postStop(): Unit = log.info("MappersGroup stopped")
   override def receive: Receive = {
@@ -43,14 +41,7 @@ class MappersGroup(reducersGroupActorRef: ActorRef, masterActorRef: ActorRef) ex
       mapperIdToActor -= mapperId
     case RequestMapperList(requestId) =>
       sender() ! ReplyMapperList(requestId, mapperIdToActor.keySet)
-    case RequestAllMapResults(requestId) =>
-      context.actorOf(MappersGroupQuery.props(
-        actorToMapperId = actorToMapperId,
-        requestId = requestId,
-        requester = sender(),
-        3.seconds
-      ))
-    case request @ CalculateDirections =>
-      mapperIdToActor.values.foreach(mapperActor => mapperActor forward request)
+    case request @ CalculateDirections(_, _, _, _, _) =>
+      context.actorOf(MappersGroupQuery.props(actorToMapperId, request, masterActorRef, 5.minutes))
   }
 }
