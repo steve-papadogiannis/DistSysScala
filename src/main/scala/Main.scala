@@ -3,6 +3,7 @@ import akka.actor.ActorSystem
 import scala.io.StdIn
 
 object Main {
+  object CreateInfrastracture
   def main(args: Array[String]): Unit = {
     val system = ActorSystem("DirectionsResultMapReduceSystem")
     try {
