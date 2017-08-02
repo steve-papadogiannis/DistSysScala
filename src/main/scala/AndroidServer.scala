@@ -9,7 +9,7 @@ class AndroidServer extends Actor with ActorLogging {
   override def postStop(): Unit = log.info("Android Server stopped")
   override def receive: Receive = {
     case CreateInfrastracture =>
-      val master = context.actorOf(MasterImpl.props)
+      val master = context.actorOf(Master.props)
       master ! CreateInfrastracture
     // todo cases for android client
   }

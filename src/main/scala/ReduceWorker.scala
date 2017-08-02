@@ -1,5 +1,11 @@
-import akka.actor.{Actor, ActorLogging}
+import akka.actor.Props
 
-trait ReduceWorker extends Actor with ActorLogging {
+object ReduceWorker {
+  def props(reducerId: String): Props = Props(new ReduceWorker(reducerId))
 
+  case class RequestTrackReducer(name: String)
+}
+
+class ReduceWorker(name: String) extends ReduceWorker {
+  override def receive: Receive = ???
 }

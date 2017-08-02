@@ -1,27 +1,23 @@
-import akka.actor.{Actor, ActorLogging}
-import com.google.maps.model.DirectionsResult
+import akka.actor.{Actor, ActorLogging, Props}
 
-/**
-  * Created by stefanos on 5/5/17.
-  */
-trait Master extends Actor with ActorLogging {
-  def initialize(): Unit
+object Master {
+  def props: Props = Props(new Master)
+}
 
-  def waitForNewQueriesThread(): Unit
-
-  def searchCache(startGeoPoint: GeoPoint, endGeoPoint: GeoPoint): DirectionsResult
-
-  def distributeToMappers(startGeoPoint: GeoPoint, endGeoPoint: GeoPoint): Unit
-
-  def waitForMappers(): Unit
-
-  def ackToReducers(): Unit
-
-  def collectDataFromReducer(): Unit
-
-  def askGoogleDirectionsAPI(startGeoPoint: GeoPoint, endGeoPoint: GeoPoint): DirectionsResult
-
-  def updateCache(startGeoPoint: GeoPoint, endGeoPoint: GeoPoint, directions: DirectionsResult): Boolean
-
-  def updateDatabase(startGeoPoint: GeoPoint, endGeoPoint: GeoPoint, directions: DirectionsResult): Boolean
+class Master extends Actor with ActorLogging {
+  override def preStart(): Unit = log.info("MasterImpl started")
+  override def postStop(): Unit = log.info("MasterImpl stopped")
+  override def receive: Receive = {
+    case CreateInfrastracture =>
+      log.info("Creating mappers group actor.")
+      val mappersGroupActor = context.actorOf(MappersGroup.props)
+      context.watch(mappersGroupActor)
+      mappersGroupActor ! RequestTrackReducer("havana")
+      mappersGroupActor ! RequestTrackReducer("saoPaolo")
+      mappersGroupActor ! RequestTrackReducer("athens")
+      mappersGroupActor ! RequestTrackReducer("jamaica")
+      log.info("Creating reducers group actor.")
+      val reducersGroupActor = context.actorOf(ReducersGroup.props)
+      reducersGroupActor ! RequestTrackReducer("moscow")
+  }
 }

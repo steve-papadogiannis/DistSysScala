@@ -20,7 +20,7 @@ class ReducersGroup extends Actor with ActorLogging {
           reducerActor forward request
         case None =>
           log.info("Creating mapper actor for {}", reducerId)
-          val mapperActor = context.actorOf(ReduceWorkerImpl.props(reducerId), s"device-$reducerId")
+          val mapperActor = context.actorOf(ReduceWorker.props(reducerId), s"device-$reducerId")
           reducerIdToActor += reducerId -> mapperActor
           actorToReducerId += mapperActor -> reducerId
           mapperActor forward request
@@ -33,7 +33,7 @@ class ReducersGroup extends Actor with ActorLogging {
     case RequestMapperList(requestId) =>
       sender() ! ReplyMapperList(requestId, reducerIdToActor.keySet)
     case RequestAllMapResults(requestId) =>
-      context.actorOf(MapperGroupQuery.props(
+      context.actorOf(ReducersGroupQuery.props(
         actorToReducerId = actorToReducerId,
         requestId = requestId,
         requester = sender(),

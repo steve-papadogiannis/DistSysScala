@@ -1,8 +1,9 @@
-import akka.actor.Actor
+import akka.actor.Props
 
-/**
-  * Created by stefanos on 5/5/17.
-  */
-trait MapWorker extends Actor {
+object MapWorker {
+  def props(a: String): Props = Props(new MapWorker(a))
+}
 
+class MapWorker(name: String) extends MapWorker {
+  override def receive: Receive = ???
 }
