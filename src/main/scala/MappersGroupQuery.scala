@@ -1,5 +1,6 @@
-import ReducersGroupQuery.CollectionTimeout
+import MappersGroupQuery.CollectionTimeout
 import akka.actor.{Actor, ActorLogging, ActorRef, Cancellable, Props, Terminated}
+
 import scala.concurrent.duration.FiniteDuration
 
 object MappersGroupQuery {
@@ -10,23 +11,23 @@ object MappersGroupQuery {
   }
 }
 
-class MappersGroupQuery(actorToDeviceId: Map[ActorRef, String], requestId: Long,
+class MappersGroupQuery(actorToMapperId: Map[ActorRef, String], requestId: Long,
   requester: ActorRef, timeout: FiniteDuration) extends Actor with ActorLogging {
   import context.dispatcher
   val queryTimeoutTimer: Cancellable = context.system.scheduler.scheduleOnce(timeout, self, CollectionTimeout)
   override def preStart(): Unit = {
-    actorToDeviceId.keysIterator.foreach { deviceActor =>
-      context.watch(deviceActor)
-      deviceActor ! Device.ReadTemperature(0)
+    actorToMapperId.keysIterator.foreach { mapperActor =>
+      context.watch(mapperActor)
+      mapperActor ! MapWorker.ReadMapResults(0)
     }
   }
   override def postStop(): Unit = {
     queryTimeoutTimer.cancel()
   }
-  override def receive: Receive = waitingForReplies(Map.empty, actorToDeviceId.keySet)
-  def waitingForReplies(repliesSoFar: Map[String, ReducersGroup.TemperatureReading],
-                        stillWaiting: Set[ActorRef]): Receive = {
-    case Device.RespondTemperature(0, valueOption) =>
+  override def receive: Receive = waitingForReplies(Map.empty, actorToMapperId.keySet)
+  def waitingForReplies(repliesSoFar: Map[String, MappersGroup.Result],
+    stillWaiting: Set[ActorRef]): Receive = {
+    case MapWorker.RespondMapResults(0, valueOption) =>
       val deviceActor = sender()
       val reading = valueOption match {
         case Some(value) => ReducersGroup.Temperature(value)
@@ -34,22 +35,21 @@ class MappersGroupQuery(actorToDeviceId: Map[ActorRef, String], requestId: Long,
       }
       receivedResponse(deviceActor, reading, stillWaiting, repliesSoFar)
     case Terminated(deviceActor) =>
-      receivedResponse(deviceActor, ReducersGroup.DeviceNotAvailable, stillWaiting, repliesSoFar)
+      receivedResponse(deviceActor, MappersGroup.MapperNotAvailable, stillWaiting, repliesSoFar)
     case CollectionTimeout =>
       val timedOutReplies =
-        stillWaiting.map { deviceActor =>
-          val deviceId = actorToDeviceId(deviceActor)
-          deviceId -> ReducersGroup.DeviceTimedOut
+        stillWaiting.map { mapActor =>
+          val mapperId = actorToMapperId(mapActor)
+          mapperId -> MappersGroup.MapperTimedOut
         }
-      requester ! ReducersGroup.RespondAllTemperatures(requestId, repliesSoFar ++ timedOutReplies)
+      requester ! MappersGroup.RespondAllMapResults(requestId, repliesSoFar ++ timedOutReplies)
       context.stop(self)
   }
-  def receivedResponse(deviceActor: ActorRef, reading: ReducersGroup.TemperatureReading,
-                       stillWaiting: Set[ActorRef], repliesSoFar: Map[String, ReducersGroup.TemperatureReading]): Unit = {
-    context.unwatch(deviceActor)
-    val deviceId = actorToDeviceId(deviceActor)
-    val newStillWaiting = stillWaiting - deviceActor
-
+  def receivedResponse(mapperActor: ActorRef, reading: MappersGroup.Result,
+    stillWaiting: Set[ActorRef], repliesSoFar: Map[String, ReducersGroup.TemperatureReading]): Unit = {
+    context.unwatch(mapperActor)
+    val deviceId = actorToMapperId(mapperActor)
+    val newStillWaiting = stillWaiting - mapperActor
     val newRepliesSoFar = repliesSoFar + (deviceId -> reading)
     if (newStillWaiting.isEmpty) {
       requester ! ReducersGroup.RespondAllTemperatures(requestId, newRepliesSoFar)
