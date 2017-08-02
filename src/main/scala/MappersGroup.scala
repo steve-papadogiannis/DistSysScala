@@ -1,11 +1,11 @@
-import ReducersGroup.{ReplyMapperList, RequestAllMapResults, RequestMapperList}
-import Master.RequestTrackReducer
+import MappersGroup.{ReplyMapperList, RequestAllMapResults, RequestMapperList}
+import Master.RequestTrackMapper
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Terminated}
 
 import scala.concurrent.duration._
 
 object MappersGroup {
-  def props: Props = Props(new ReducersGroup)
+  def props: Props = Props(new MappersGroup)
   final case class RequestMapperList(requestId: Long)
   final case class ReplyMapperList(requestId: Long, ids: Set[String])
   sealed trait MapperResult
@@ -21,13 +21,13 @@ class MappersGroup extends Actor with ActorLogging {
   var mapperIdToActor = Map.empty[String, ActorRef]
   var actorToMapperId = Map.empty[ActorRef, String]
   var nextCollectionId = 0L
-  override def preStart(): Unit = log.info("ReducersGroup started")
-  override def postStop(): Unit = log.info("ReducersGroup stopped")
+  override def preStart(): Unit = log.info("MappersGroup started")
+  override def postStop(): Unit = log.info("MappersGroup stopped")
   override def receive: Receive = {
-    case request @ RequestTrackReducer(mapperId) =>
+    case request @ RequestTrackMapper(mapperId) =>
       mapperIdToActor.get(mapperId) match {
-        case Some(deviceActor) =>
-          deviceActor forward request
+        case Some(mapperActor) =>
+          mapperActor forward request
         case None =>
           log.info("Creating mapper actor for {}", mapperId)
           val mapperActor = context.actorOf(MapWorker.props(mapperId), s"device-$mapperId")
@@ -43,7 +43,7 @@ class MappersGroup extends Actor with ActorLogging {
     case RequestMapperList(requestId) =>
       sender() ! ReplyMapperList(requestId, mapperIdToActor.keySet)
     case RequestAllMapResults(requestId) =>
-      context.actorOf(ReducersGroupQuery.props(
+      context.actorOf(MappersGroupQuery.props(
         actorToMapperId = actorToMapperId,
         requestId = requestId,
         requester = sender(),
