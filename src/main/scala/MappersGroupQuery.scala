@@ -7,9 +7,8 @@ import scala.concurrent.duration.FiniteDuration
 object MappersGroupQuery {
   case object CollectionTimeout
   def props(actorToMapperId: Map[ActorRef, String], request: CalculateDirections,
-            requester: ActorRef, timeout: FiniteDuration): Props = {
+            requester: ActorRef, timeout: FiniteDuration): Props =
       Props(new MappersGroupQuery(actorToMapperId, request, requester, timeout))
-  }
 }
 
 class MappersGroupQuery(actorToMapperId: Map[ActorRef, String], request: CalculateDirections,
@@ -36,8 +35,8 @@ class MappersGroupQuery(actorToMapperId: Map[ActorRef, String], request: Calcula
       receivedResponse(mapperActor, MappersGroup.MapperNotAvailable, stillWaiting, repliesSoFar)
     case CollectionTimeout =>
       val timedOutReplies =
-        stillWaiting.map { mapActor =>
-          val mapperId = actorToMapperId(mapActor)
+        stillWaiting.map { mapperActor =>
+          val mapperId = actorToMapperId(mapperActor)
           mapperId -> MappersGroup.MapperTimedOut
         }
       requester ! MappersGroup.RespondAllMapResults(request, repliesSoFar ++ timedOutReplies)

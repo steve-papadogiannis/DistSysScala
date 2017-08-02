@@ -32,7 +32,9 @@ class Master extends Actor with ActorLogging {
     case request @ CalculateDirections =>
       mappersGroupActor forward request
     case RespondAllMapResults(request, results) =>
-      val merged = results.foldLeft(List.empty[Map[GeoPointPair, DirectionsResult]])(x, (y, z) => x.add(z))
+      val merged = results.filter(x => x._2.isInstanceOf[MappersGroup.ConcreteResult])
+        .foldLeft[List[Map[GeoPointPair, DirectionsResult]]](List.empty[Map[GeoPointPair, DirectionsResult]])((x, y) =>
+          x ++ y._2.asInstanceOf[MappersGroup.ConcreteResult].value)
       reducersGroupActor ! CalculateReduction(request.requestId, merged)
   }
 }

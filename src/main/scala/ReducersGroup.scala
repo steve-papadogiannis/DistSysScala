@@ -1,6 +1,7 @@
 import Master.RequestTrackReducer
-import ReducersGroup.{ReplyReducerList, RequestAllReduceResults, RequestReducerList}
+import ReducersGroup.{CalculateReduction, ReplyReducerList, RequestReducerList}
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Terminated}
+import com.google.maps.model.DirectionsResult
 
 import scala.concurrent.duration._
 
@@ -14,16 +15,15 @@ object ReducersGroup {
   case object ReducerNotAvailable extends ReducerResult
   case object ReducerTimedOut extends ReducerResult
   final case class RequestAllReduceResults(requestId: Long)
-  final case class RespondAllReduceResults(requestId: Long, results: Map[String, ReducerResult])
-
+  final case class RespondAllReduceResults(request: CalculateReduction, results: Map[String, ReducerResult])
   case class MapResult(value: Any)
-
+  case class CalculateReduction(requestId: Long, merged: List[Map[GeoPointPair, DirectionsResult]])
+  case class ConcreteResult(valueOption: Map[GeoPointPair, List[DirectionsResult]]) extends ReducerResult
 }
 
 class ReducersGroup extends Actor with ActorLogging {
   var reducerIdToActor = Map.empty[String, ActorRef]
   var actorToReducerId = Map.empty[ActorRef, String]
-  var nextCollectionId = 0L
   override def preStart(): Unit = log.info("ReducersGroup started")
   override def postStop(): Unit = log.info("ReducersGroup stopped")
   override def receive: Receive = {
@@ -45,12 +45,8 @@ class ReducersGroup extends Actor with ActorLogging {
       reducerIdToActor -= reducerId
     case RequestReducerList(requestId) =>
       sender() ! ReplyReducerList(requestId, reducerIdToActor.keySet)
-    case RequestAllReduceResults(requestId) =>
-      context.actorOf(ReducersGroupQuery.props(
-        actorToReducerId = actorToReducerId,
-        requestId = requestId,
-        requester = sender(),
-        3.seconds
-      ))
+    case request @ CalculateReduction(_, _) =>
+      context.actorOf(ReducersGroupQuery.props(actorToReducerId, request, sender(), 5.minutes))
   }
 }
+
