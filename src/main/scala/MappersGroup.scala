@@ -1,3 +1,4 @@
+import AndroidServer.CalculateDirections
 import MappersGroup.{ReplyMapperList, RequestAllMapResults, RequestMapperList}
 import Master.RequestTrackMapper
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Terminated}
@@ -5,7 +6,7 @@ import akka.actor.{Actor, ActorLogging, ActorRef, Props, Terminated}
 import scala.concurrent.duration._
 
 object MappersGroup {
-  def props: Props = Props(new MappersGroup)
+  def props(reducersGroupActorRef: ActorRef, masterActorRef: ActorRef): Props = Props(new MappersGroup(reducersGroupActorRef, masterActorRef))
   final case class RequestMapperList(requestId: Long)
   final case class ReplyMapperList(requestId: Long, ids: Set[String])
   sealed trait MapperResult
@@ -17,7 +18,7 @@ object MappersGroup {
   final case class RespondAllMapResults(requestId: Long, results: Map[String, MapperResult])
 }
 
-class MappersGroup extends Actor with ActorLogging {
+class MappersGroup(reducersGroupActorRef: ActorRef, masterActorRef: ActorRef) extends Actor with ActorLogging {
   var mapperIdToActor = Map.empty[String, ActorRef]
   var actorToMapperId = Map.empty[ActorRef, String]
   var nextCollectionId = 0L
@@ -30,7 +31,7 @@ class MappersGroup extends Actor with ActorLogging {
           mapperActor forward request
         case None =>
           log.info("Creating mapper actor for {}", mapperId)
-          val mapperActor = context.actorOf(MapWorker.props(mapperId), s"device-$mapperId")
+          val mapperActor = context.actorOf(MapWorker.props(mapperId, reducersGroupActorRef, masterActorRef), s"device-$mapperId")
           mapperIdToActor += mapperId -> mapperActor
           actorToMapperId += mapperActor -> mapperId
           mapperActor forward request
@@ -49,5 +50,7 @@ class MappersGroup extends Actor with ActorLogging {
         requester = sender(),
         3.seconds
       ))
+    case request @ CalculateDirections =>
+      mapperIdToActor.values.foreach(mapperActor => mapperActor forward request)
   }
 }

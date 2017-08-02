@@ -1,6 +1,7 @@
+import AndroidServer.CalculateDirections
 import Main.CreateInfrastracture
 import Master.{RequestTrackMapper, RequestTrackReducer}
-import akka.actor.{Actor, ActorLogging, Props}
+import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 
 object Master {
   def props: Props = Props(new Master)
@@ -9,20 +10,24 @@ object Master {
 }
 
 class Master extends Actor with ActorLogging {
+  var mappersGroupActor: ActorRef = _
+  var reducersGroupActor: ActorRef = _
   override def preStart(): Unit = log.info("MasterImpl started")
   override def postStop(): Unit = log.info("MasterImpl stopped")
   override def receive: Receive = {
     case CreateInfrastracture =>
+      log.info("Creating reducers group actor.")
+      reducersGroupActor = context.actorOf(ReducersGroup.props(mappersGroupActor = this.self, masterActor = this.self))
+      reducersGroupActor ! RequestTrackReducer("moscow")
       log.info("Creating mappers group actor.")
-      val mappersGroupActor = context.actorOf(ReducersGroup.props)
+      mappersGroupActor = context.actorOf(MappersGroup.props(reducersGroupActor = reducersGroupActor, masterActor = this.self))
       context.watch(mappersGroupActor)
       mappersGroupActor ! RequestTrackMapper("havana")
       mappersGroupActor ! RequestTrackMapper("saoPaolo")
       mappersGroupActor ! RequestTrackMapper("athens")
       mappersGroupActor ! RequestTrackMapper("jamaica")
-      log.info("Creating reducers group actor.")
-      val reducersGroupActor = context.actorOf(ReducersGroup.props)
-      reducersGroupActor ! RequestTrackReducer("moscow")
+    case request @ CalculateDirections =>
+      mappersGroupActor forward request
   }
 }
 
