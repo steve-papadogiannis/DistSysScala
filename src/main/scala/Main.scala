@@ -8,10 +8,11 @@ import akka.stream.ActorMaterializer
 import scala.io.StdIn
 
 object Main extends Directives with SimpleRoutes {
+  var counter: Long = 0L
   object CreateInfrastracture
   object RequestHandler {
-    case object Handle
-    case class Result(data: Any)
+    case class Handle(requestId: Long, startLat: Long, startLong: Long, endLat: Long, endLong: Long)
+    case class Result(data: String)
   }
   class RequestHandler extends Actor {
     import RequestHandler._
@@ -21,7 +22,7 @@ object Main extends Directives with SimpleRoutes {
         requester = sender()
         supervisor ! CalculateDirections
       case FinalResponse(request, results) =>
-        requester ! Result(results)
+        requester ! Result("fadf")
     }
   }
 
@@ -29,7 +30,7 @@ object Main extends Directives with SimpleRoutes {
     system = ActorSystem("DirectionsResultMapReduceSystem")
     implicit val materializer = ActorMaterializer()
     implicit val executionContext = system.dispatcher
-    val bindingFuture = Http().bindAndHandle(routes, "localhost", 8383)
+    val bindingFuture = Http().bindAndHandle(routes, "localhost", 8484)
     supervisor = system.actorOf(Supervisor.props(), "supervisor")
     supervisor ! CreateInfrastracture
     println(s"Server online at http://localhost:8080/\nPress RETURN to stop...")

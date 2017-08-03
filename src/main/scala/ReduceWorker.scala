@@ -9,5 +9,8 @@ object ReduceWorker {
 }
 
 class ReduceWorker(name: String) extends Actor with ActorLogging {
-  override def receive: Receive = ???
+  override def receive: Receive = {
+    case A =>
+      print("fadsf")
+  }
 }
