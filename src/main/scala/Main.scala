@@ -11,13 +11,13 @@ object Main extends Directives with SimpleRoutes {
   var counter: Long = 0L
   object CreateInfrastracture
   object RequestHandler {
-    case class Handle(requestId: Long, startLat: Long, startLong: Long, endLat: Long, endLong: Long)
+    case class Handle(requestId: Long, startLat: Double, startLong: Double, endLat: Double, endLong: Double)
     case class Result(data: String)
   }
   class RequestHandler extends Actor {
     import RequestHandler._
     var requester: ActorRef = _
-    def receive: PartialFunction[Any, Unit] = {
+    override def receive: Receive = {
       case Handle =>
         requester = sender()
         supervisor ! CalculateDirections
@@ -30,10 +30,10 @@ object Main extends Directives with SimpleRoutes {
     system = ActorSystem("DirectionsResultMapReduceSystem")
     implicit val materializer = ActorMaterializer()
     implicit val executionContext = system.dispatcher
-    val bindingFuture = Http().bindAndHandle(routes, "localhost", 8484)
+    val bindingFuture = Http().bindAndHandle(routes, "localhost", 8383)
     supervisor = system.actorOf(Supervisor.props(), "supervisor")
     supervisor ! CreateInfrastracture
-    println(s"Server online at http://localhost:8080/\nPress RETURN to stop...")
+    println(s"Server online at http://localhost:8383/\nPress RETURN to stop...")
     StdIn.readLine()
     bindingFuture.flatMap(_.unbind()).onComplete(_ => system.terminate())
   }

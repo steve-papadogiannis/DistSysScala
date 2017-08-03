@@ -23,11 +23,11 @@ trait SimpleRoutes extends JsonSupport {
     path("getDirections") {
       post {
         entity(as[Incoming]) { entity =>
-          implicit val askTimeout: Timeout = 5.minutes // and a timeout
+          implicit val askTimeout: Timeout = 3.seconds // and a timeout
           val actor = system.actorOf(Props[RequestHandler])
           val requestId = counter
           counter += 1
-          onSuccess((actor ? RequestHandler.Handle(requestId, 0, 0, 0, 0)).mapTo[RequestHandler.Result]) { result =>
+          onSuccess((actor ? RequestHandler.Handle(requestId, entity.coords.head, entity.coords(1), entity.coords(2), entity.coords(3))).mapTo[RequestHandler.Result]) { result =>
             complete(result.data)
           }
 
