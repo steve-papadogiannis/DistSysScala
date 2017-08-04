@@ -10,6 +10,7 @@ import akka.http.scaladsl.server.Directives._
 import akka.pattern.ask
 import spray.json.{DefaultJsonProtocol, RootJsonFormat}
 
+import scala.concurrent.Future
 import scala.concurrent.duration._
 
 final case class Incoming(name: String, coords: List[Double])
@@ -27,10 +28,8 @@ trait SimpleRoutes extends JsonSupport {
           val actor = system.actorOf(Props[RequestHandler])
           val requestId = counter
           counter += 1
-          onSuccess((actor ? RequestHandler.Handle(requestId, entity.coords.head, entity.coords(1), entity.coords(2), entity.coords(3))).mapTo[RequestHandler.Result]) { result =>
-            complete(result.data)
-          }
-
+          val result: Future[RequestHandler.Result] = (actor ? RequestHandler.Handle(requestId, entity.coords.head, entity.coords(1), entity.coords(2), entity.coords(3))).mapTo[RequestHandler.Result]
+          complete(result)
         }
       }
     }
