@@ -1,3 +1,5 @@
+import java.util.Map.Entry
+
 import AndroidServer.CalculateDirections
 import Main.CreateInfrastracture
 import MapWorker.CalculateReduction
@@ -5,7 +7,7 @@ import MappersGroup.RespondAllMapResults
 import Master.{FinalResponse, RequestTrackMapper, RequestTrackReducer}
 import ReducersGroup.RespondAllReduceResults
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
-import com.google.maps.model.DirectionsResult
+import com.google.maps.model.{DirectionsLeg, DirectionsResult, DirectionsRoute}
 
 object Master {
   def props: Props = Props(new Master)
@@ -48,21 +50,28 @@ class Master extends Actor with ActorLogging {
   import com.google.maps.model.DirectionsResult
   import java.util
 
+  var startLatitude: Double = 30.0
+
+  var startLongitude: Double = 23.0
+
+  var endLatitude: Double = 29.0
+
+  var endLongitude: Double = 43.0
+
   def calculateEuclideanMin(result: util.Map[GeoPointPair, List[DirectionsResult]]): DirectionsResult =
     if (result.isEmpty) null
     else {
-      var min = null
+      var min: Entry[GeoPointPair, List[DirectionsResult]] = null
       val startGeoPoint = new GeoPoint(startLatitude, startLongitude)
       val endGeoPoint = new GeoPoint(endLatitude, endLongitude)
-      import scala.collection.JavaConversions._
-      for (entry <- result.entrySet) {
-        if (min == null || min.getKey.getStartGeoPoint.euclideanDistance(startGeoPoint) + min.getKey.getEndGeoPoint.euclideanDistance(endGeoPoint) > entry.getKey.getStartGeoPoint.euclideanDistance(startGeoPoint) + entry.getKey.getEndGeoPoint.euclideanDistance(endGeoPoint)) min = entry
+      for (entry: Entry[GeoPointPair, List[DirectionsResult]] <- result.entrySet) {
+        if (min == null || min.getKey.getStartGeoPoint.euclideanDistance(startGeoPoint) + min.getKey.getEndGeoPoint.euclideanDistance(endGeoPoint) >
+          entry.getKey.getStartGeoPoint.euclideanDistance(startGeoPoint) + entry.getKey.getEndGeoPoint.euclideanDistance(endGeoPoint)) min = entry
       }
       val minDirectionsResultList = if (min != null) min.getValue
       else null
-      if (minDirectionsResultList != null && !minDirectionsResultList.isEmpty) {
+      if (minDirectionsResultList != null && minDirectionsResultList.nonEmpty) {
         var minDirectionsResult = null
-        import scala.collection.JavaConversions._
         for (directionsResult <- minDirectionsResultList) {
           if (minDirectionsResult == null) minDirectionsResult = directionsResult
           else {
