@@ -15,10 +15,11 @@ import spray.json.{DefaultJsonProtocol, RootJsonFormat}
 import scala.concurrent.duration._
 
 final case class Incoming(name: String, coords: List[Double])
+final case class Outgoing(name: String, directionsResult: DirectionsResult)
 
 trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
   implicit val incoming: RootJsonFormat[Incoming] = jsonFormat2(Incoming)
-  implicit val outgoing: RootJsonFormat[RequestHandler.Result] = jsonFormat1(RequestHandler.Result)
+  implicit val outgoing: RootJsonFormat[Outgoing] = jsonFormat2(Outgoing)
 }
 
 object RequestHandler {
