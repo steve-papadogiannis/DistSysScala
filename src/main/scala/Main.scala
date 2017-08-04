@@ -1,4 +1,4 @@
-import akka.actor.{Actor, ActorRef, ActorSystem}
+import akka.actor.{ActorRef, ActorSystem}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.stream.ActorMaterializer
@@ -8,7 +8,6 @@ import scala.io.StdIn
 object Main extends Directives with SimpleRoutes {
   var counter: Long = 0L
   object CreateInfrastracture
-
   def main(args: Array[String]): Unit = {
     system = ActorSystem("DirectionsResultMapReduceSystem")
     implicit val materializer = ActorMaterializer()
