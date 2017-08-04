@@ -1,5 +1,3 @@
-import AndroidServer.CalculateDirections
-import Master.FinalResponse
 import akka.actor.{Actor, ActorRef, ActorSystem}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.{Directives, Route}
@@ -10,21 +8,6 @@ import scala.io.StdIn
 object Main extends Directives with SimpleRoutes {
   var counter: Long = 0L
   object CreateInfrastracture
-  object RequestHandler {
-    case class Handle(requestId: Long, startLat: Double, startLong: Double, endLat: Double, endLong: Double)
-    case class Result(data: String)
-  }
-  class RequestHandler extends Actor {
-    import RequestHandler._
-    var requester: ActorRef = _
-    override def receive: Receive = {
-      case Handle =>
-        requester = sender()
-        supervisor ! CalculateDirections
-      case FinalResponse(request, results) =>
-        requester ! Result("fadf")
-    }
-  }
 
   def main(args: Array[String]): Unit = {
     system = ActorSystem("DirectionsResultMapReduceSystem")

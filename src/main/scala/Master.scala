@@ -43,7 +43,10 @@ class Master extends Actor with ActorLogging {
       x ++ y._2.asInstanceOf[MappersGroup.ConcreteResult].value)
       reducersGroupActor ! CalculateReduction(request.requestId, merged)
     case RespondAllReduceResults(request, results) =>
-      val value = calculateEuclideanMin(results)
+      val merged = results.filter(x => x._2.isInstanceOf[ReducersGroup.ConcreteResult])
+        .foldLeft[Map[GeoPointPair, List[DirectionsResult]]](Map.empty[GeoPointPair, List[DirectionsResult]])((x, y) =>
+        x + (y._1.asInstanceOf[GeoPointPair] -> y._2.asInstanceOf[ReducersGroup.ConcreteResult].valueOption.asInstanceOf[List[DirectionsResult]]))
+      val value = calculateEuclideanMin(merged)
       requester ! FinalResponse(request, value)
   }
 
@@ -58,53 +61,54 @@ class Master extends Actor with ActorLogging {
 
   var endLongitude: Double = 43.0
 
-  def calculateEuclideanMin(result: util.Map[GeoPointPair, List[DirectionsResult]]): DirectionsResult =
+  def calculateEuclideanMin(result: Map[GeoPointPair, List[DirectionsResult]]): DirectionsResult =
     if (result.isEmpty) null
     else {
-      var min: Entry[GeoPointPair, List[DirectionsResult]] = null
+      var min: Tuple2[GeoPointPair, List[DirectionsResult]] = null
       val startGeoPoint = new GeoPoint(startLatitude, startLongitude)
       val endGeoPoint = new GeoPoint(endLatitude, endLongitude)
-      for (entry: Entry[GeoPointPair, List[DirectionsResult]] <- result.entrySet) {
-        if (min == null || min.getKey.getStartGeoPoint.euclideanDistance(startGeoPoint) + min.getKey.getEndGeoPoint.euclideanDistance(endGeoPoint) >
-          entry.getKey.getStartGeoPoint.euclideanDistance(startGeoPoint) + entry.getKey.getEndGeoPoint.euclideanDistance(endGeoPoint)) min = entry
+      for ((key, value) <- result) {
+        if (min == null || min._1.getStartGeoPoint.euclideanDistance(startGeoPoint) + min._1.getEndGeoPoint.euclideanDistance(endGeoPoint) >
+          key.getStartGeoPoint.euclideanDistance(startGeoPoint) + key.getEndGeoPoint.euclideanDistance(endGeoPoint)) min = (key, value)
       }
-      val minDirectionsResultList = if (min != null) min.getValue
-      else null
-      if (minDirectionsResultList != null && minDirectionsResultList.nonEmpty) {
-        var minDirectionsResult = null
-        for (directionsResult <- minDirectionsResultList) {
-          if (minDirectionsResult == null) minDirectionsResult = directionsResult
-          else {
-            val totalDurationOfMin = Array(0)
-            val totalDurationOfIteratee = Array(0)
-            util.Arrays.stream(minDirectionsResult.routes).forEach((x: DirectionsRoute) => {
-              def foo(x: DirectionsRoute) = util.Arrays.stream(x.legs).forEach((y: DirectionsLeg) => {
-                def foo(y: DirectionsLeg) = {
-                  totalDurationOfMin(0) += y.duration.inSeconds
-                }
-
-                foo(y)
+      val minDirectionsResultList =
+        if (min != null)
+          min._2
+        else
+          null
+        if (minDirectionsResultList != null && minDirectionsResultList.nonEmpty) {
+          var minDirectionsResult: DirectionsResult = null
+          for (directionsResult <- minDirectionsResultList) {
+            if (minDirectionsResult == null)
+              minDirectionsResult = directionsResult
+            else {
+              val totalDurationOfMin = Array(0L)
+              val totalDurationOfIteratee = Array(0L)
+              util.Arrays.stream(minDirectionsResult.routes).forEach((x: DirectionsRoute) => {
+                def foo(x: DirectionsRoute) = util.Arrays.stream(x.legs).forEach((y: DirectionsLeg) => {
+                  def foo(y: DirectionsLeg) = {
+                    totalDurationOfMin(0) += y.duration.inSeconds
+                  }
+                  foo(y)
+                })
+                foo(x)
               })
-
-              foo(x)
-            })
-            util.Arrays.stream(directionsResult.routes).forEach((x: DirectionsRoute) => {
-              def foo(x: DirectionsRoute) = util.Arrays.stream(x.legs).forEach((y: DirectionsLeg) => {
-                def foo(y: DirectionsLeg) = {
-                  totalDurationOfIteratee(0) += y.duration.inSeconds
-                }
-
-                foo(y)
+              util.Arrays.stream(directionsResult.routes).forEach((x: DirectionsRoute) => {
+                def foo(x: DirectionsRoute) = util.Arrays.stream(x.legs).forEach((y: DirectionsLeg) => {
+                  def foo(y: DirectionsLeg) = {
+                    totalDurationOfIteratee(0) += y.duration.inSeconds
+                  }
+                  foo(y)
+                })
+                foo(x)
               })
-
-              foo(x)
-            })
-            if (totalDurationOfIteratee(0) < totalDurationOfMin(0)) minDirectionsResult = directionsResult
+              if (totalDurationOfIteratee(0) < totalDurationOfMin(0))
+                minDirectionsResult = directionsResult
+            }
           }
+          minDirectionsResult
         }
-        minDirectionsResult
-      }
-      else null
+        else null
     }
 }
 
