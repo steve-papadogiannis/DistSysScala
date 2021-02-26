@@ -6,18 +6,25 @@ import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import gr.papadogiannis.stefanos.server.servers.Server
 
 object Supervisor {
+
   def props(): Props = Props(new Supervisor)
+
 }
 
 class Supervisor extends Actor with ActorLogging {
+
   override def preStart(): Unit = log.info("Application started")
+
   override def postStop(): Unit = log.info("Application stopped")
+
   var androidServer: ActorRef = _
-  override def receive: Receive= {
+
+  override def receive: Receive = {
     case CreateInfrastracture =>
       androidServer = context.actorOf(Server.props)
       androidServer ! CreateInfrastracture
-    case request @ CalculateDirections(_,_,_,_,_) =>
+    case request@CalculateDirections(_, _, _, _, _) =>
       androidServer forward request
   }
+
 }

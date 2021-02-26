@@ -7,28 +7,41 @@ import gr.papadogiannis.stefanos.server.servers.Server.CalculateDirections
 import scala.concurrent.duration.FiniteDuration
 
 object MappersGroupQuery {
+
   case object CollectionTimeout
+
   def props(actorToMapperId: Map[ActorRef, String], request: CalculateDirections,
             requester: ActorRef, timeout: FiniteDuration): Props =
-      Props(new MappersGroupQuery(actorToMapperId, request, requester, timeout))
+    Props(new MappersGroupQuery(actorToMapperId, request, requester, timeout))
+
 }
 
-class MappersGroupQuery(actorToMapperId: Map[ActorRef, String], request: CalculateDirections,
-  requester: ActorRef, timeout: FiniteDuration) extends Actor with ActorLogging {
+class MappersGroupQuery(actorToMapperId: Map[ActorRef, String],
+                        request: CalculateDirections,
+                        requester: ActorRef, timeout: FiniteDuration)
+  extends Actor
+    with ActorLogging {
+
   import context.dispatcher
-  val queryTimeoutTimer: Cancellable = context.system.scheduler.scheduleOnce(timeout, self, CollectionTimeout)
+
+  val queryTimeoutTimer: Cancellable =
+    context.system.scheduler.scheduleOnce(timeout, self, CollectionTimeout)
+
   override def preStart(): Unit = {
     actorToMapperId.keysIterator.foreach { mapperActor =>
       context.watch(mapperActor)
       mapperActor ! request
     }
   }
+
   override def postStop(): Unit = {
     queryTimeoutTimer.cancel()
   }
+
   override def receive: Receive = waitingForReplies(Map.empty, actorToMapperId.keySet)
+
   def waitingForReplies(repliesSoFar: Map[String, MappersGroup.MapperResult],
-    stillWaiting: Set[ActorRef]): Receive = {
+                        stillWaiting: Set[ActorRef]): Receive = {
     case MapWorker.RespondMapResults(request, valueOption) =>
       val mapperActor = sender()
       val reading = MappersGroup.ConcreteResult(valueOption)
@@ -44,8 +57,9 @@ class MappersGroupQuery(actorToMapperId: Map[ActorRef, String], request: Calcula
       requester ! MappersGroup.RespondAllMapResults(request, repliesSoFar ++ timedOutReplies)
       context.stop(self)
   }
+
   def receivedResponse(mapperActor: ActorRef, reading: MappersGroup.MapperResult,
-    stillWaiting: Set[ActorRef], repliesSoFar: Map[String, MappersGroup.MapperResult]): Unit = {
+                       stillWaiting: Set[ActorRef], repliesSoFar: Map[String, MappersGroup.MapperResult]): Unit = {
     context.unwatch(mapperActor)
     val deviceId = actorToMapperId(mapperActor)
     val newStillWaiting = stillWaiting - mapperActor
@@ -57,4 +71,5 @@ class MappersGroupQuery(actorToMapperId: Map[ActorRef, String], request: Calcula
       context.become(waitingForReplies(newRepliesSoFar, newStillWaiting))
     }
   }
+
 }

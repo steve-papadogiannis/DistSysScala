@@ -18,22 +18,36 @@ import akka.util.Timeout
 import scala.concurrent.duration._
 
 final case class Incoming(name: String, coords: List[Double])
+
 final case class Outgoing(name: String, directionsResult: DirectionsResult)
 
 trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
+
   implicit val incoming: RootJsonFormat[Incoming] = jsonFormat2(Incoming)
+
   implicit val outgoing: RootJsonFormat[Outgoing] = jsonFormat2(Outgoing)
+
 }
 
 object RequestHandler {
+
   def props(requestId: Long): Props = Props(new RequestHandler(requestId))
-  case class Handle(requestId: Long, startLat: Double, startLong: Double, endLat: Double, endLong: Double, complete: DirectionsResult => Unit)
+
+  case class Handle(requestId: Long, startLat: Double,
+                    startLong: Double, endLat: Double,
+                    endLong: Double, complete: DirectionsResult => Unit)
+
   case class Result(data: DirectionsResult)
+
 }
 
-class RequestHandler(requestId: Long) extends Actor {
+class RequestHandler(requestId: Long)
+  extends Actor {
+
   var requester: ActorRef = _
+
   var complete: DirectionsResult => Unit = _
+
   override def receive: Receive = {
     case Handle(_, _, _, _, _, f) =>
       requester = sender()
@@ -42,9 +56,11 @@ class RequestHandler(requestId: Long) extends Actor {
     case FinalResponse(request, results) =>
       complete(results)
   }
+
 }
 
 trait SimpleRoutes extends JsonSupport {
+
   lazy val simpleRoutes: Route =
     path("getDirections") {
       post {
@@ -53,9 +69,10 @@ trait SimpleRoutes extends JsonSupport {
           implicit val askTimeout: Timeout = 5.minutes // and a timeout
           counter += 1
           completeWith(implicitly[ToResponseMarshaller[DirectionsResult]]) { f =>
-            system.actorOf(RequestHandler.props(requestId), "request-" + requestId) ! RequestHandler.Handle(requestId, entity.coords.head,entity.coords(1), entity.coords(2), entity.coords(3), f)
+            system.actorOf(RequestHandler.props(requestId), "request-" + requestId) ! RequestHandler.Handle(requestId, entity.coords.head, entity.coords(1), entity.coords(2), entity.coords(3), f)
           }
         }
       }
     }
+
 }

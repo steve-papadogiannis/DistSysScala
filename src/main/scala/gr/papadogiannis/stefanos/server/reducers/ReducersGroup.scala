@@ -10,27 +10,46 @@ import scala.concurrent.duration._
 
 object ReducersGroup {
   def props(mappersGroupActorRef: ActorRef, masterActorRef: ActorRef): Props = Props(new ReducersGroup)
+
   final case class RequestReducerList(requestId: Long)
+
   final case class ReplyReducerList(requestId: Long, ids: Set[String])
+
   sealed trait ReducerResult
+
   final case class Result(value: Double) extends ReducerResult
+
   case object ResultNotAvailable extends ReducerResult
+
   case object ReducerNotAvailable extends ReducerResult
+
   case object ReducerTimedOut extends ReducerResult
+
   final case class RequestAllReduceResults(requestId: Long)
+
   final case class RespondAllReduceResults(request: CalculateReduction, results: Map[String, ReducerResult])
+
   case class MapResult(value: Any)
+
   case class CalculateReduction(requestId: Long, merged: List[Map[GeoPointPair, DirectionsResult]])
+
   case class ConcreteResult(valueOption: Map[GeoPointPair, List[DirectionsResult]]) extends ReducerResult
 }
 
-class ReducersGroup extends Actor with ActorLogging {
+class ReducersGroup
+  extends Actor
+    with ActorLogging {
+
   var reducerIdToActor = Map.empty[String, ActorRef]
+
   var actorToReducerId = Map.empty[ActorRef, String]
+
   override def preStart(): Unit = log.info("ReducersGroup started")
+
   override def postStop(): Unit = log.info("ReducersGroup stopped")
+
   override def receive: Receive = {
-    case request @ RequestTrackReducer(reducerId) =>
+    case request@RequestTrackReducer(reducerId) =>
       reducerIdToActor.get(reducerId) match {
         case Some(reducerActor) =>
           reducerActor forward request
@@ -48,8 +67,9 @@ class ReducersGroup extends Actor with ActorLogging {
       reducerIdToActor -= reducerId
     case RequestReducerList(requestId) =>
       sender() ! ReplyReducerList(requestId, reducerIdToActor.keySet)
-    case request @ CalculateReduction(_, _) =>
+    case request@CalculateReduction(_, _) =>
       context.actorOf(ReducersGroupQuery.props(actorToReducerId, request, sender(), 5.minutes))
   }
+
 }
 

@@ -7,28 +7,39 @@ import akka.actor.{Actor, ActorLogging, ActorRef, Cancellable, Props, Terminated
 import scala.concurrent.duration.FiniteDuration
 
 object ReducersGroupQuery {
+
   case object CollectionTimeout
+
   def props(actorToReducerId: Map[ActorRef, String], request: CalculateReduction,
             requester: ActorRef, timeout: FiniteDuration): Props =
     Props(new ReducersGroupQuery(actorToReducerId, request, requester, timeout))
+
 }
 
 class ReducersGroupQuery(actorToReducerId: Map[ActorRef, String], request: CalculateReduction,
-  requester: ActorRef, timeout: FiniteDuration) extends Actor with ActorLogging {
+                         requester: ActorRef, timeout: FiniteDuration)
+  extends Actor
+    with ActorLogging {
+
   import context.dispatcher
+
   val queryTimeoutTimer: Cancellable = context.system.scheduler.scheduleOnce(timeout, self, CollectionTimeout)
+
   override def preStart(): Unit = {
     actorToReducerId.keysIterator.foreach { reducerActor =>
       context.watch(reducerActor)
       reducerActor ! request
     }
   }
+
   override def postStop(): Unit = {
     queryTimeoutTimer.cancel()
   }
+
   override def receive: Receive = waitingForReplies(Map.empty, actorToReducerId.keySet)
+
   def waitingForReplies(repliesSoFar: Map[String, ReducersGroup.ReducerResult],
-    stillWaiting: Set[ActorRef]): Receive = {
+                        stillWaiting: Set[ActorRef]): Receive = {
     case ReduceWorker.RespondeReduceResult(request, valueOption) =>
       val reducerActor = sender()
       val reading = ReducersGroup.ConcreteResult(valueOption)
@@ -44,8 +55,9 @@ class ReducersGroupQuery(actorToReducerId: Map[ActorRef, String], request: Calcu
       requester ! ReducersGroup.RespondAllReduceResults(request, repliesSoFar ++ timedOutReplies)
       context.stop(self)
   }
+
   def receivedResponse(reducerActor: ActorRef, reading: ReducersGroup.ReducerResult,
-    stillWaiting: Set[ActorRef], repliesSoFar: Map[String, ReducersGroup.ReducerResult]): Unit = {
+                       stillWaiting: Set[ActorRef], repliesSoFar: Map[String, ReducersGroup.ReducerResult]): Unit = {
     context.unwatch(reducerActor)
     val reducerId = actorToReducerId(reducerActor)
     val newStillWaiting = stillWaiting - reducerActor
@@ -57,4 +69,5 @@ class ReducersGroupQuery(actorToReducerId: Map[ActorRef, String], request: Calcu
       context.become(waitingForReplies(newRepliesSoFar, newStillWaiting))
     }
   }
+
 }
