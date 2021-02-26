@@ -1,13 +1,15 @@
-import java.util.Map.Entry
+package gr.papadogiannis.stefanos.server.masters
 
-import AndroidServer.CalculateDirections
-import Main.CreateInfrastracture
-import MapWorker.CalculateReduction
-import MappersGroup.RespondAllMapResults
-import Master.{FinalResponse, RequestTrackMapper, RequestTrackReducer}
-import ReducersGroup.RespondAllReduceResults
-import akka.actor.{Actor, ActorLogging, ActorRef, Props}
+import gr.papadogiannis.stefanos.server.masters.Master.{FinalResponse, RequestTrackMapper, RequestTrackReducer}
+import gr.papadogiannis.stefanos.server.reducers.ReducersGroup.{CalculateReduction, RespondAllReduceResults}
+import gr.papadogiannis.stefanos.server.mappers.MappersGroup.RespondAllMapResults
 import com.google.maps.model.{DirectionsLeg, DirectionsResult, DirectionsRoute}
+import gr.papadogiannis.stefanos.server.servers.Server.CalculateDirections
+import gr.papadogiannis.stefanos.server.models.{GeoPoint, GeoPointPair}
+import gr.papadogiannis.stefanos.server.Main.CreateInfrastracture
+import gr.papadogiannis.stefanos.server.reducers.ReducersGroup
+import gr.papadogiannis.stefanos.server.mappers.MappersGroup
+import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 
 object Master {
   def props: Props = Props(new Master)
@@ -51,6 +53,7 @@ class Master extends Actor with ActorLogging {
   }
 
   import com.google.maps.model.DirectionsResult
+
   import java.util
 
   var startLatitude: Double = 30.0

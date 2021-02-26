@@ -1,6 +1,8 @@
-import AndroidServer.CalculateDirections
-import MappersGroupQuery.CollectionTimeout
+package gr.papadogiannis.stefanos.server.mappers
+
+import gr.papadogiannis.stefanos.server.mappers.MappersGroupQuery.CollectionTimeout
 import akka.actor.{Actor, ActorLogging, ActorRef, Cancellable, Props, Terminated}
+import gr.papadogiannis.stefanos.server.servers.Server.CalculateDirections
 
 import scala.concurrent.duration.FiniteDuration
 

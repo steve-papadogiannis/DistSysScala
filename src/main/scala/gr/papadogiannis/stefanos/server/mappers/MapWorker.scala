@@ -1,9 +1,12 @@
-import AndroidServer.CalculateDirections
-import MapWorker._
-import Master.RequestTrackMapper
+package gr.papadogiannis.stefanos.server.mappers
+
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.maps.model.DirectionsResult
+import gr.papadogiannis.stefanos.server.mappers.MapWorker.{MapperRegistered, RespondMapResults}
+import gr.papadogiannis.stefanos.server.masters.Master.RequestTrackMapper
+import gr.papadogiannis.stefanos.server.models.{DirectionsResultWrapper, GeoPoint, GeoPointPair}
+import gr.papadogiannis.stefanos.server.servers.Server.CalculateDirections
 
 import scala.io.Source
 
@@ -33,8 +36,7 @@ class MapWorker(mapperId: String, reducersGroupActorRef: ActorRef, masterActorRe
   def calculateHash(str: String): Long = {
     import java.io.UnsupportedEncodingException
     import java.nio.ByteBuffer
-    import java.security.MessageDigest
-    import java.security.NoSuchAlgorithmException
+    import java.security.{MessageDigest, NoSuchAlgorithmException}
     var bytesOfMessage: Array[Byte] = new Array[Byte](0)
     try {
       bytesOfMessage = str.getBytes("UTF-8")

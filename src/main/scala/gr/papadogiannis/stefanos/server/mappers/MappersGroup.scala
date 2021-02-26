@@ -1,8 +1,12 @@
-import AndroidServer.CalculateDirections
-import MappersGroup.{ReplyMapperList, RequestMapperList}
-import Master.RequestTrackMapper
+package gr.papadogiannis.stefanos.server.mappers
+
+import gr.papadogiannis.stefanos.server.mappers.MappersGroup.{ReplyMapperList, RequestMapperList}
+import gr.papadogiannis.stefanos.server.servers.Server.CalculateDirections
+import gr.papadogiannis.stefanos.server.masters.Master.RequestTrackMapper
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Terminated}
+import gr.papadogiannis.stefanos.server.models.GeoPointPair
 import com.google.maps.model.DirectionsResult
+
 import scala.concurrent.duration._
 
 object MappersGroup {

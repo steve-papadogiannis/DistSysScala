@@ -1,3 +1,5 @@
+package gr.papadogiannis.stefanos.server.models
+
 class GeoPoint(latitude: Double, longitude: Double) {
   def getLatitude: Double = latitude
   def getLongitude: Double = longitude

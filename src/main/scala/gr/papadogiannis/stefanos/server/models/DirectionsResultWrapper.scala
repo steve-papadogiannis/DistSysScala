@@ -1,3 +1,5 @@
+package gr.papadogiannis.stefanos.server.models
+
 import com.google.maps.model.DirectionsResult
 
 class DirectionsResultWrapper(idP: String, startPointP: GeoPoint, endPointP: GeoPoint,

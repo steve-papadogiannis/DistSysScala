@@ -1,13 +1,19 @@
-import akka.actor.{ActorRef, ActorSystem}
-import akka.http.scaladsl.Http
+package gr.papadogiannis.stefanos.server
+
+import gr.papadogiannis.stefanos.server.routes.{BaseRoutes, SimpleRoutes}
+import gr.papadogiannis.stefanos.server.supervisors.Supervisor
 import akka.http.scaladsl.server.{Directives, Route}
+import akka.actor.{ActorRef, ActorSystem}
 import akka.stream.ActorMaterializer
+import akka.http.scaladsl.Http
 
 import scala.io.StdIn
 
 object Main extends Directives with SimpleRoutes {
   var counter: Long = 0L
+
   object CreateInfrastracture
+
   def main(args: Array[String]): Unit = {
     system = ActorSystem("DirectionsResultMapReduceSystem")
     implicit val materializer = ActorMaterializer()
@@ -19,6 +25,7 @@ object Main extends Directives with SimpleRoutes {
     StdIn.readLine()
     bindingFuture.flatMap(_.unbind()).onComplete(_ => system.terminate())
   }
+
   val routes: Route = BaseRoutes.baseRoutes ~ simpleRoutes
   implicit var system: ActorSystem = _
   var supervisor: ActorRef = _

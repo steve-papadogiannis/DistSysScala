@@ -1,6 +1,9 @@
-import Master.RequestTrackReducer
-import ReducersGroup.{CalculateReduction, ReplyReducerList, RequestReducerList}
+package gr.papadogiannis.stefanos.server.reducers
+
+import gr.papadogiannis.stefanos.server.reducers.ReducersGroup.{CalculateReduction, ReplyReducerList, RequestReducerList}
+import gr.papadogiannis.stefanos.server.masters.Master.RequestTrackReducer
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Terminated}
+import gr.papadogiannis.stefanos.server.models.GeoPointPair
 import com.google.maps.model.DirectionsResult
 
 import scala.concurrent.duration._

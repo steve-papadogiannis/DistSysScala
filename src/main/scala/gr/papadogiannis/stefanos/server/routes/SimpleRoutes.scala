@@ -1,17 +1,20 @@
-import AndroidServer.CalculateDirections
-import Main.{counter, supervisor, system}
-import Master.FinalResponse
-import RequestHandler.Handle
-import akka.actor.{Actor, ActorRef, Props}
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import akka.http.scaladsl.marshalling.ToResponseMarshaller
-import akka.http.scaladsl.server.Route
+package gr.papadogiannis.stefanos.server.routes
+
+import gr.papadogiannis.stefanos.server.Main.{counter, supervisor, system}
+import gr.papadogiannis.stefanos.server.servers.Server.CalculateDirections
+import gr.papadogiannis.stefanos.server.masters.Master.FinalResponse
+import gr.papadogiannis.stefanos.server.routes.RequestHandler.Handle
 import akka.http.scaladsl.server.directives.MethodDirectives.post
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.server.directives.PathDirectives.path
-import akka.util.Timeout
+import akka.http.scaladsl.marshalling.ToResponseMarshaller
+import spray.json.{DefaultJsonProtocol, RootJsonFormat}
 import akka.http.scaladsl.server.Directives._
 import com.google.maps.model.DirectionsResult
-import spray.json.{DefaultJsonProtocol, RootJsonFormat}
+import akka.actor.{Actor, ActorRef, Props}
+import akka.http.scaladsl.server.Route
+import akka.util.Timeout
+
 import scala.concurrent.duration._
 
 final case class Incoming(name: String, coords: List[Double])
