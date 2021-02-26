@@ -40,7 +40,7 @@ class ReducersGroupQuery(actorToReducerId: Map[ActorRef, String], request: Calcu
 
   def waitingForReplies(repliesSoFar: Map[String, ReducersGroup.ReducerResult],
                         stillWaiting: Set[ActorRef]): Receive = {
-    case ReduceWorker.RespondeReduceResult(request, valueOption) =>
+    case ReduceWorker.RespondReduceResult(request, valueOption) =>
       val reducerActor = sender()
       val reading = ReducersGroup.ConcreteResult(valueOption)
       receivedResponse(reducerActor, reading, stillWaiting, repliesSoFar)

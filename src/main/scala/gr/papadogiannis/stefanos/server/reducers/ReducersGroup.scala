@@ -9,6 +9,7 @@ import com.google.maps.model.DirectionsResult
 import scala.concurrent.duration._
 
 object ReducersGroup {
+
   def props(mappersGroupActorRef: ActorRef, masterActorRef: ActorRef): Props = Props(new ReducersGroup)
 
   final case class RequestReducerList(requestId: Long)
@@ -34,6 +35,7 @@ object ReducersGroup {
   case class CalculateReduction(requestId: Long, merged: List[Map[GeoPointPair, DirectionsResult]])
 
   case class ConcreteResult(valueOption: Map[GeoPointPair, List[DirectionsResult]]) extends ReducerResult
+
 }
 
 class ReducersGroup

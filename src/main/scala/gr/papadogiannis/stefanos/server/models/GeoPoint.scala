@@ -9,6 +9,6 @@ class GeoPoint(latitude: Double, longitude: Double) {
   def euclideanDistance(other: GeoPoint): Double =
     Math.sqrt(Math.pow(getLatitude - other.getLatitude, 2) + Math.pow(getLongitude - other.getLongitude, 2))
 
-  override def toString: String = "GeoPoint [ Latitude = " + latitude + ", Longitude = " + longitude + "]"
+  override def toString: String = s"GeoPoint [ Latitude = $latitude, Longitude = $longitude]"
 
 }

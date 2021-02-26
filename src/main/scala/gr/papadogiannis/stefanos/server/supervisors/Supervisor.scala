@@ -1,7 +1,7 @@
 package gr.papadogiannis.stefanos.server.supervisors
 
 import gr.papadogiannis.stefanos.server.servers.Server.CalculateDirections
-import gr.papadogiannis.stefanos.server.Main.CreateInfrastracture
+import gr.papadogiannis.stefanos.server.Main.CreateInfrastructure
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import gr.papadogiannis.stefanos.server.servers.Server
 
@@ -11,20 +11,22 @@ object Supervisor {
 
 }
 
-class Supervisor extends Actor with ActorLogging {
+class Supervisor
+  extends Actor
+    with ActorLogging {
 
   override def preStart(): Unit = log.info("Application started")
 
   override def postStop(): Unit = log.info("Application stopped")
 
-  var androidServer: ActorRef = _
+  var server: ActorRef = _
 
   override def receive: Receive = {
-    case CreateInfrastracture =>
-      androidServer = context.actorOf(Server.props)
-      androidServer ! CreateInfrastracture
+    case CreateInfrastructure =>
+      server = context.actorOf(Server.props)
+      server ! CreateInfrastructure
     case request@CalculateDirections(_, _, _, _, _) =>
-      androidServer forward request
+      server forward request
   }
 
 }

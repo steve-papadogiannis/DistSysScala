@@ -1,6 +1,6 @@
 package gr.papadogiannis.stefanos.server.reducers
 
-import gr.papadogiannis.stefanos.server.reducers.ReduceWorker.{ReducerRegistered, RespondeReduceResult}
+import gr.papadogiannis.stefanos.server.reducers.ReduceWorker.{ReducerRegistered, RespondReduceResult}
 import gr.papadogiannis.stefanos.server.reducers.ReducersGroup.CalculateReduction
 import gr.papadogiannis.stefanos.server.masters.Master.RequestTrackReducer
 import gr.papadogiannis.stefanos.server.models.GeoPointPair
@@ -15,7 +15,7 @@ object ReduceWorker {
 
   sealed trait ReducerResult
 
-  case class RespondeReduceResult(requestId: Long, value: Map[GeoPointPair, List[DirectionsResult]]) extends ReducerResult
+  case class RespondReduceResult(requestId: Long, value: Map[GeoPointPair, List[DirectionsResult]]) extends ReducerResult
 
   object ReducerRegistered
 
@@ -30,7 +30,7 @@ class ReduceWorker(name: String)
       sender() ! ReducerRegistered
     case request@CalculateReduction(requestId, merged) =>
       val finalResult = reduce(merged)
-      sender() ! RespondeReduceResult(requestId, finalResult)
+      sender() ! RespondReduceResult(requestId, finalResult)
   }
 
   import com.google.maps.model.DirectionsResult

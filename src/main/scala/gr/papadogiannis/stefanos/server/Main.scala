@@ -7,6 +7,7 @@ import akka.actor.{ActorRef, ActorSystem}
 import akka.stream.ActorMaterializer
 import akka.http.scaladsl.Http
 
+import scala.concurrent.ExecutionContextExecutor
 import scala.io.StdIn
 
 object Main
@@ -15,21 +16,21 @@ object Main
 
   var counter: Long = 0L
 
-  object CreateInfrastracture
+  object CreateInfrastructure
 
   def main(args: Array[String]): Unit = {
 
     system = ActorSystem("DirectionsResultMapReduceSystem")
 
-    implicit val materializer = ActorMaterializer()
+    implicit val materializer: ActorMaterializer = ActorMaterializer()
 
-    implicit val executionContext = system.dispatcher
+    implicit val executionContext: ExecutionContextExecutor = system.dispatcher
 
     val bindingFuture = Http().bindAndHandle(routes, "localhost", 8383)
 
     supervisor = system.actorOf(Supervisor.props(), "supervisor")
 
-    supervisor ! CreateInfrastracture
+    supervisor ! CreateInfrastructure
 
     println(s"Server online at http://localhost:8383/\nPress RETURN to stop...")
 

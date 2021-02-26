@@ -6,7 +6,7 @@ import gr.papadogiannis.stefanos.server.mappers.MappersGroup.RespondAllMapResult
 import com.google.maps.model.{DirectionsLeg, DirectionsResult, DirectionsRoute}
 import gr.papadogiannis.stefanos.server.servers.Server.CalculateDirections
 import gr.papadogiannis.stefanos.server.models.{GeoPoint, GeoPointPair}
-import gr.papadogiannis.stefanos.server.Main.CreateInfrastracture
+import gr.papadogiannis.stefanos.server.Main.CreateInfrastructure
 import gr.papadogiannis.stefanos.server.reducers.ReducersGroup
 import gr.papadogiannis.stefanos.server.mappers.MappersGroup
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
@@ -33,12 +33,12 @@ class Master
 
   var requester: ActorRef = _
 
-  override def preStart(): Unit = log.info("MasterImpl started")
+  override def preStart(): Unit = log.info("Master started")
 
-  override def postStop(): Unit = log.info("MasterImpl stopped")
+  override def postStop(): Unit = log.info("Master stopped")
 
   override def receive: Receive = {
-    case CreateInfrastracture =>
+    case CreateInfrastructure =>
       log.info("Creating reducers group actor.")
       reducersGroupActor = context.actorOf(ReducersGroup.props(mappersGroupActor, this.self))
       reducersGroupActor ! RequestTrackReducer("moscow")
