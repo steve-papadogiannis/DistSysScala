@@ -1,4 +1,4 @@
-name := "DistSysScala"
+name := "dist-sys-server-scala"
 
 version := "1.0"
 
