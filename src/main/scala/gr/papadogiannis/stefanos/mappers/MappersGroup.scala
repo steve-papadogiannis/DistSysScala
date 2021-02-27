@@ -1,11 +1,11 @@
-package gr.papadogiannis.stefanos.server.mappers
+package gr.papadogiannis.stefanos.mappers
 
-import gr.papadogiannis.stefanos.server.mappers.MappersGroup.{ReplyMapperList, RequestMapperList}
-import gr.papadogiannis.stefanos.server.servers.Server.CalculateDirections
-import gr.papadogiannis.stefanos.server.masters.Master.RequestTrackMapper
+import MappersGroup.{ReplyMapperList, RequestMapperList}
+import gr.papadogiannis.stefanos.servers.Server.CalculateDirections
+import gr.papadogiannis.stefanos.masters.Master.RequestTrackMapper
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Terminated}
-import gr.papadogiannis.stefanos.server.models.GeoPointPair
 import com.google.maps.model.DirectionsResult
+import gr.papadogiannis.stefanos.models.GeoPointPair
 
 import scala.concurrent.duration._
 

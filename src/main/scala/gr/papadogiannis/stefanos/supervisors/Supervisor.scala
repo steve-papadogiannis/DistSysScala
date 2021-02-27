@@ -1,9 +1,9 @@
-package gr.papadogiannis.stefanos.server.supervisors
+package gr.papadogiannis.stefanos.supervisors
 
-import gr.papadogiannis.stefanos.server.servers.Server.CalculateDirections
-import gr.papadogiannis.stefanos.server.Main.CreateInfrastructure
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
-import gr.papadogiannis.stefanos.server.servers.Server
+import gr.papadogiannis.stefanos.Main.CreateInfrastructure
+import gr.papadogiannis.stefanos.servers.Server
+import gr.papadogiannis.stefanos.servers.Server.CalculateDirections
 
 object Supervisor {
 

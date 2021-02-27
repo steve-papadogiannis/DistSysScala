@@ -1,4 +1,4 @@
-package gr.papadogiannis.stefanos.server.routes
+package gr.papadogiannis.stefanos.routes
 
 import akka.http.scaladsl.server.directives.PathDirectives.pathEndOrSingleSlash
 import akka.http.scaladsl.server.directives.RouteDirectives.complete

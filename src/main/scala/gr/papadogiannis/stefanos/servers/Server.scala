@@ -1,9 +1,9 @@
-package gr.papadogiannis.stefanos.server.servers
+package gr.papadogiannis.stefanos.servers
 
-import gr.papadogiannis.stefanos.server.servers.Server.CalculateDirections
-import gr.papadogiannis.stefanos.server.Main.CreateInfrastructure
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
-import gr.papadogiannis.stefanos.server.masters.Master
+import gr.papadogiannis.stefanos.Main.CreateInfrastructure
+import gr.papadogiannis.stefanos.masters.Master
+import gr.papadogiannis.stefanos.servers.Server.CalculateDirections
 
 object Server {
 

@@ -1,4 +1,4 @@
-package gr.papadogiannis.stefanos.server.constants
+package gr.papadogiannis.stefanos.constants
 
 /**
  * Created by stefanos on 5/5/17.

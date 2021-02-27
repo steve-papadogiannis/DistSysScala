@@ -1,0 +1,74 @@
+@startuml
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 20
+
+participant "Client Application" as Client
+actor User
+box Service
+boundary Main
+control Supervisor <<Actor>>
+control Server <<Actor>>
+control Master <<Actor>>
+control ReducersGroup <<Actor>>
+control MappersGroup <<Actor>>
+control ReduceWorker <<Actor>>
+control MapWorker <<Actor>>
+collections MemCache
+end box
+database Mongo
+boundary "Google Geolocation API" as GGA
+
+autonumber "<b>[000]"
+
+== Initialization ==
+
+User -> Main : Initializes System
+activate Main
+
+activate Supervisor
+Main -> Supervisor : Sends "CreateInfrastructure" signal
+
+activate Server
+Supervisor -> Server : Sends "CreateInfrastructure" signal
+
+activate Master
+Server -> Master : Sends "CreateInfrastructure" signal
+
+activate ReducersGroup
+Master -> ReducersGroup : Sends "RequestTrackReducer" signal
+
+ReducersGroup -> ReducersGroup : Checks if ReducerWorker with given name exists
+
+opt false
+ReducersGroup -> ReduceWorker : Creates actor
+activate ReduceWorker
+end
+
+ReducersGroup -> ReduceWorker : Forwards request
+
+ReduceWorker --> ReducersGroup : Sends "ReducerRegistered" signal
+
+activate MappersGroup
+Master -> MappersGroup : Sends "RequestTrackMapper" signal
+
+MappersGroup -> MappersGroup : Checks if MapWorker with given name exists
+
+opt false
+MappersGroup -> MapWorker : Creates actor
+activate MapWorker
+end
+
+MappersGroup -> MapWorker : Forwards request
+
+MapWorker --> MappersGroup : Sends "MapperRegistered" signal
+
+== Runtime ==
+
+== Shutdown ==
+
+User -> Main : Submits any input
+
+Main -> Main : Terminates Actor System
+deactivate Main
+
+@enduml

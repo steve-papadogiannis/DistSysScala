@@ -1,8 +1,8 @@
-package gr.papadogiannis.stefanos.server.mappers
+package gr.papadogiannis.stefanos.mappers
 
-import gr.papadogiannis.stefanos.server.mappers.MappersGroupQuery.CollectionTimeout
+import MappersGroupQuery.CollectionTimeout
 import akka.actor.{Actor, ActorLogging, ActorRef, Cancellable, Props, Terminated}
-import gr.papadogiannis.stefanos.server.servers.Server.CalculateDirections
+import gr.papadogiannis.stefanos.servers.Server.CalculateDirections
 
 import scala.concurrent.duration.FiniteDuration
 

@@ -1,9 +1,9 @@
-package gr.papadogiannis.stefanos.server.routes
+package gr.papadogiannis.stefanos.routes
 
-import gr.papadogiannis.stefanos.server.Main.{counter, supervisor, system}
-import gr.papadogiannis.stefanos.server.servers.Server.CalculateDirections
-import gr.papadogiannis.stefanos.server.masters.Master.FinalResponse
-import gr.papadogiannis.stefanos.server.routes.RequestHandler.Handle
+import gr.papadogiannis.stefanos.Main.{counter, supervisor, system}
+import gr.papadogiannis.stefanos.servers.Server.CalculateDirections
+import gr.papadogiannis.stefanos.masters.Master.FinalResponse
+import RequestHandler.Handle
 import akka.http.scaladsl.server.directives.MethodDirectives.post
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.server.directives.PathDirectives.path

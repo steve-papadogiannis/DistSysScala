@@ -1,4 +1,4 @@
-package gr.papadogiannis.stefanos.server.models
+package gr.papadogiannis.stefanos.models
 
 class GeoPointPair(startGeoPoint: GeoPoint, endGeoPoint: GeoPoint) {
 

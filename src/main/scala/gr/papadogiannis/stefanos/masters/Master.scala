@@ -1,15 +1,17 @@
-package gr.papadogiannis.stefanos.server.masters
+package gr.papadogiannis.stefanos.masters
 
-import gr.papadogiannis.stefanos.server.masters.Master.{FinalResponse, RequestTrackMapper, RequestTrackReducer}
-import gr.papadogiannis.stefanos.server.reducers.ReducersGroup.{CalculateReduction, RespondAllReduceResults}
-import gr.papadogiannis.stefanos.server.mappers.MappersGroup.RespondAllMapResults
+import Master.{FinalResponse, RequestTrackMapper, RequestTrackReducer}
+import gr.papadogiannis.stefanos.reducers.ReducersGroup.{CalculateReduction, RespondAllReduceResults}
+import gr.papadogiannis.stefanos.mappers.MappersGroup.RespondAllMapResults
 import com.google.maps.model.{DirectionsLeg, DirectionsResult, DirectionsRoute}
-import gr.papadogiannis.stefanos.server.servers.Server.CalculateDirections
-import gr.papadogiannis.stefanos.server.models.{GeoPoint, GeoPointPair}
-import gr.papadogiannis.stefanos.server.Main.CreateInfrastructure
-import gr.papadogiannis.stefanos.server.reducers.ReducersGroup
-import gr.papadogiannis.stefanos.server.mappers.MappersGroup
+import gr.papadogiannis.stefanos.servers.Server.CalculateDirections
+import gr.papadogiannis.stefanos.server.models.GeoPoint
+import gr.papadogiannis.stefanos.Main.CreateInfrastructure
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
+import gr.papadogiannis.stefanos.Main.CreateInfrastructure
+import gr.papadogiannis.stefanos.mappers.MappersGroup
+import gr.papadogiannis.stefanos.models.{GeoPoint, GeoPointPair}
+import gr.papadogiannis.stefanos.reducers.ReducersGroup
 
 object Master {
 
