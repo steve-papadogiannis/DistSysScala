@@ -1,5 +1,7 @@
 # Directions Map Reduce Server #
 
+[![Build Status](https://travis-ci.com/steve-papadogiannis/dist-sys-server-scala.svg?branch=master)](https://travis-ci.com/steve-papadogiannis/dist-sys-server-scala)
+
 A small project that takes directions queries and produces directions results in polynomial representation.
 
 ## Versions ##
@@ -15,5 +17,10 @@ A small project that takes directions queries and produces directions results in
 
 ## Build ##
 
+Below command should be issued inside project's directory:
+
+```
+sbt ++2.12.2 test
+```
 
 ## Run ##
