@@ -7,7 +7,6 @@ import gr.papadogiannis.stefanos.models._
 import scala.concurrent.duration.FiniteDuration
 
 object ReducersGroupQuery {
-
   case object CollectionTimeout
 
   def props(actorToReducerId: Map[ActorRef, String],
@@ -15,7 +14,6 @@ object ReducersGroupQuery {
             requester: ActorRef,
             timeout: FiniteDuration): Props =
     Props(new ReducersGroupQuery(actorToReducerId, request, requester, timeout))
-
 }
 
 class ReducersGroupQuery(actorToReducerId: Map[ActorRef, String],

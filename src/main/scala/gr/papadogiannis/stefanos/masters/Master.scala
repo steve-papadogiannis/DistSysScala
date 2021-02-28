@@ -1,6 +1,6 @@
 package gr.papadogiannis.stefanos.masters
 
-import gr.papadogiannis.stefanos.models.{CalculateDirections, CalculateReduction, ConcreteMapperResult, ConcreteReducerResult, FinalResponse, GeoPoint, GeoPointPair, RequestTrackMapper, RequestTrackReducer, RespondAllMapResults, RespondAllReduceResults}
+import gr.papadogiannis.stefanos.models.{CalculateDirections, CalculateReduction, ConcreteMapperResult, ConcreteReducerResult, FinalResponse, GeoPoint, GeoPointPair, MapperResult, ReducerResult, RequestTrackMapper, RequestTrackReducer, RespondAllMapResults, RespondAllReduceResults}
 import com.google.maps.model.{DirectionsLeg, DirectionsResult, DirectionsRoute}
 import gr.papadogiannis.stefanos.Main.CreateInfrastructure
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
@@ -42,16 +42,25 @@ class Master extends Actor with ActorLogging {
       requester = sender()
       mappersGroupActor forward request
     case RespondAllMapResults(request, results) =>
-      val merged = results.filter(x => x._2.isInstanceOf[ConcreteMapperResult])
-        .foldLeft[List[Map[GeoPointPair, DirectionsResult]]](List.empty[Map[GeoPointPair, DirectionsResult]])((x, y) =>
-          x ++ y._2.asInstanceOf[ConcreteMapperResult].value)
+      val merged = getMerged(results)
       reducersGroupActor ! CalculateReduction(request.requestId, merged)
     case RespondAllReduceResults(request, results) =>
-      val merged = results.filter(x => x._2.isInstanceOf[ConcreteReducerResult])
-        .foldLeft[Map[GeoPointPair, List[DirectionsResult]]](Map.empty[GeoPointPair, List[DirectionsResult]])((x, y) =>
-          x + (y._1.asInstanceOf[GeoPointPair] -> y._2.asInstanceOf[ConcreteReducerResult].valueOption.asInstanceOf[List[DirectionsResult]]))
+      val merged = getMerged(results)
       val value = calculateEuclideanMin(merged)
       requester ! FinalResponse(request, value)
+  }
+
+  private def getMerged(results: Map[String, ReducerResult]) = {
+    results.filter(x => x._2.isInstanceOf[ConcreteReducerResult])
+      .foldLeft[Map[GeoPointPair, List[DirectionsResult]]](Map.empty[GeoPointPair, List[DirectionsResult]])((x, y) =>
+        x + (y._1.asInstanceOf[GeoPointPair] ->
+          y._2.asInstanceOf[ConcreteReducerResult].valueOption.asInstanceOf[List[DirectionsResult]]))
+  }
+
+  private def getMerged(results: Map[String, MapperResult]) = {
+    results.filter(x => x._2.isInstanceOf[ConcreteMapperResult])
+      .foldLeft[List[Map[GeoPointPair, DirectionsResult]]](List.empty[Map[GeoPointPair, DirectionsResult]])((x, y) =>
+        x ++ y._2.asInstanceOf[ConcreteMapperResult].value)
   }
 
   import com.google.maps.model.DirectionsResult
