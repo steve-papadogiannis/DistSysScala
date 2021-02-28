@@ -25,6 +25,10 @@ class ReduceWorker(name: String)
   extends Actor
     with ActorLogging {
 
+  override def preStart(): Unit = log.info("Reducer actor {} started", name)
+
+  override def postStop(): Unit = log.info("Reducer actor {} stopped", name)
+
   override def receive: Receive = {
     case RequestTrackReducer(_) =>
       sender() ! ReducerRegistered

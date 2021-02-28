@@ -1,12 +1,11 @@
 package gr.papadogiannis.stefanos
 
-import gr.papadogiannis.stefanos.server.routes.BaseRoutes
+import gr.papadogiannis.stefanos.routes.{BaseRoutes, SimpleRoutes}
+import gr.papadogiannis.stefanos.supervisors.Supervisor
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.actor.{ActorRef, ActorSystem}
 import akka.stream.ActorMaterializer
 import akka.http.scaladsl.Http
-import gr.papadogiannis.stefanos.routes.{BaseRoutes, SimpleRoutes}
-import gr.papadogiannis.stefanos.supervisors.Supervisor
 
 import scala.concurrent.ExecutionContextExecutor
 import scala.io.StdIn
@@ -17,23 +16,27 @@ object Main
 
   var counter: Long = 0L
 
+  val actorSystemName = "directions-map-reduce-actor-system"
+  val supervisorName = "supervisor"
+
   object CreateInfrastructure
 
   def main(args: Array[String]): Unit = {
 
-    system = ActorSystem("DirectionsResultMapReduceSystem")
+    system = ActorSystem(actorSystemName)
 
     implicit val materializer: ActorMaterializer = ActorMaterializer()
 
     implicit val executionContext: ExecutionContextExecutor = system.dispatcher
 
-    val bindingFuture = Http().bindAndHandle(routes, "localhost", 8383)
+    val port = args.head.toInt;
 
-    supervisor = system.actorOf(Supervisor.props(), "supervisor")
+    val bindingFuture = Http().bindAndHandle(routes, "localhost", port)
+    supervisor = system.actorOf(Supervisor.props(), supervisorName)
 
     supervisor ! CreateInfrastructure
 
-    println(s"Server online at http://localhost:8383/\nPress RETURN to stop...")
+    println(s"ActorSystem [$actorSystemName] started at http://localhost:$port/\nPress RETURN to stop...")
 
     StdIn.readLine()
 

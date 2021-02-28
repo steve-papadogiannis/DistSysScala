@@ -1,13 +1,12 @@
 package gr.papadogiannis.stefanos.mappers
 
+import gr.papadogiannis.stefanos.models.{DirectionsResultWrapper, GeoPoint, GeoPointPair}
+import gr.papadogiannis.stefanos.mappers.MapWorker.{MapperRegistered, RespondMapResults}
+import gr.papadogiannis.stefanos.servers.Server.CalculateDirections
+import gr.papadogiannis.stefanos.masters.Master.RequestTrackMapper
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.maps.model.DirectionsResult
-import gr.papadogiannis.stefanos.models.{DirectionsResultWrapper, GeoPoint, GeoPointPair}
-import MapWorker.{MapperRegistered, RespondMapResults}
-import gr.papadogiannis.stefanos.masters.Master.RequestTrackMapper
-import gr.papadogiannis.stefanos.server.models.GeoPoint
-import gr.papadogiannis.stefanos.servers.Server.CalculateDirections
 
 import scala.io.Source
 

@@ -56,21 +56,21 @@ class ReducersGroup
         case Some(reducerActor) =>
           reducerActor forward request
         case None =>
-          log.info("Creating mapper actor for {}", reducerId)
-          val reducerActor = context.actorOf(ReduceWorker.props(reducerId), s"device-$reducerId")
+          log.info("Creating reducer actor [{}]", reducerId)
+          val reducerActor = context.actorOf(ReduceWorker.props(reducerId), s"$reducerId")
           reducerIdToActor += reducerId -> reducerActor
           actorToReducerId += reducerActor -> reducerId
           reducerActor forward request
       }
     case Terminated(reducerActor) =>
       val reducerId = actorToReducerId(reducerActor)
-      log.info("Device actor for {} has been terminated", reducerId)
+      log.info("Reducer actor {} has been terminated", reducerId)
       actorToReducerId -= reducerActor
       reducerIdToActor -= reducerId
     case RequestReducerList(requestId) =>
       sender() ! ReplyReducerList(requestId, reducerIdToActor.keySet)
-    case request@CalculateReduction(_, _) =>
-      context.actorOf(ReducersGroupQuery.props(actorToReducerId, request, sender(), 5.minutes))
+    case request@CalculateReduction(requestId, _) =>
+      context.actorOf(ReducersGroupQuery.props(actorToReducerId, request, sender(), 5.minutes), s"reducers-group-query-$requestId")
   }
 
 }

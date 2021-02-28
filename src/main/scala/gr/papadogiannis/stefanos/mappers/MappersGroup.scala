@@ -50,31 +50,31 @@ class MappersGroup(reducersGroupActorRef: ActorRef, masterActorRef: ActorRef)
         case Some(mapperActor) =>
           mapperActor forward request
         case None =>
-          log.info("Creating mapper actor for {}", mapperId)
+          log.info("Creating mapper actor [{}]", mapperId)
           val mapperActor = context.actorOf(
             MapWorker.props(
               mapperId,
               reducersGroupActorRef,
               masterActorRef),
-            s"device-$mapperId")
+            s"$mapperId")
           mapperIdToActor += mapperId -> mapperActor
           actorToMapperId += mapperActor -> mapperId
           mapperActor forward request
       }
     case Terminated(mapperActor) =>
       val mapperId = actorToMapperId(mapperActor)
-      log.info("Device actor for {} has been terminated", mapperId)
+      log.info("Mapper actor {} has been terminated", mapperId)
       actorToMapperId -= mapperActor
       mapperIdToActor -= mapperId
     case RequestMapperList(requestId) =>
       sender() ! ReplyMapperList(requestId, mapperIdToActor.keySet)
-    case request@CalculateDirections(_, _, _, _, _) =>
+    case request@CalculateDirections(requestId, _, _, _, _) =>
       context.actorOf(
         MappersGroupQuery.props(
           actorToMapperId,
           request,
           masterActorRef,
-          5.minutes))
+          5.minutes), s"mappers-group-query-$requestId")
   }
 
 }

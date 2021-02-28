@@ -25,6 +25,8 @@ trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
 
   implicit val incoming: RootJsonFormat[Incoming] = jsonFormat2(Incoming)
 
+  implicit val dr: RootJsonFormat[DirectionsResult] = jsonFormat0(() => new DirectionsResult())
+
   implicit val outgoing: RootJsonFormat[Outgoing] = jsonFormat2(Outgoing)
 
 }
@@ -49,10 +51,10 @@ class RequestHandler(requestId: Long)
   var complete: DirectionsResult => Unit = _
 
   override def receive: Receive = {
-    case Handle(_, _, _, _, _, f) =>
+    case Handle(requestId, startLat, startLong, endLat, endLong, f) =>
       requester = sender()
       complete = f
-      supervisor ! CalculateDirections
+      supervisor ! CalculateDirections(requestId, startLat, startLong, endLat, endLong)
     case FinalResponse(request, results) =>
       complete(results)
   }

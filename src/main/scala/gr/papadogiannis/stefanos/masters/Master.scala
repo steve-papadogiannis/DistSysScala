@@ -1,17 +1,15 @@
 package gr.papadogiannis.stefanos.masters
 
-import Master.{FinalResponse, RequestTrackMapper, RequestTrackReducer}
-import gr.papadogiannis.stefanos.reducers.ReducersGroup.{CalculateReduction, RespondAllReduceResults}
-import gr.papadogiannis.stefanos.mappers.MappersGroup.RespondAllMapResults
-import com.google.maps.model.{DirectionsLeg, DirectionsResult, DirectionsRoute}
-import gr.papadogiannis.stefanos.servers.Server.CalculateDirections
-import gr.papadogiannis.stefanos.server.models.GeoPoint
-import gr.papadogiannis.stefanos.Main.CreateInfrastructure
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
+import com.google.maps.model.{DirectionsLeg, DirectionsResult, DirectionsRoute}
 import gr.papadogiannis.stefanos.Main.CreateInfrastructure
 import gr.papadogiannis.stefanos.mappers.MappersGroup
+import gr.papadogiannis.stefanos.mappers.MappersGroup.RespondAllMapResults
+import gr.papadogiannis.stefanos.masters.Master.{FinalResponse, RequestTrackMapper, RequestTrackReducer}
 import gr.papadogiannis.stefanos.models.{GeoPoint, GeoPointPair}
 import gr.papadogiannis.stefanos.reducers.ReducersGroup
+import gr.papadogiannis.stefanos.reducers.ReducersGroup.{CalculateReduction, RespondAllReduceResults}
+import gr.papadogiannis.stefanos.servers.Server.CalculateDirections
 
 object Master {
 
@@ -39,19 +37,22 @@ class Master
 
   override def postStop(): Unit = log.info("Master stopped")
 
+  val reducersGroupActorName = "reducers-group-actor"
+  val mappersGroupActorName = "mappers-group-actor"
+
   override def receive: Receive = {
     case CreateInfrastructure =>
       log.info("Creating reducers group actor.")
-      reducersGroupActor = context.actorOf(ReducersGroup.props(mappersGroupActor, this.self))
+      reducersGroupActor = context.actorOf(ReducersGroup.props(mappersGroupActor, this.self), reducersGroupActorName)
       reducersGroupActor ! RequestTrackReducer("moscow")
       log.info("Creating mappers group actor.")
-      mappersGroupActor = context.actorOf(MappersGroup.props(reducersGroupActor, this.self))
+      mappersGroupActor = context.actorOf(MappersGroup.props(reducersGroupActor, this.self), mappersGroupActorName)
       context.watch(mappersGroupActor)
       mappersGroupActor ! RequestTrackMapper("havana")
-      mappersGroupActor ! RequestTrackMapper("saoPaolo")
+      mappersGroupActor ! RequestTrackMapper("sao-paolo")
       mappersGroupActor ! RequestTrackMapper("athens")
       mappersGroupActor ! RequestTrackMapper("jamaica")
-    case request@CalculateDirections =>
+    case request@CalculateDirections(_, _, _, _, _) =>
       requester = sender()
       mappersGroupActor forward request
     case RespondAllMapResults(request, results) =>
