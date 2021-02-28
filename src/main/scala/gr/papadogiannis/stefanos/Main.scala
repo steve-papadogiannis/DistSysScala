@@ -40,13 +40,14 @@ object Main extends Directives with SimpleRoutes {
     supervisor ! CreateInfrastructure
 
     implicit val materializer: ActorMaterializer = ActorMaterializer()
+    implicit val executionContext: ExecutionContextExecutor = system.dispatcher
+
     val bindingFuture = Http().bindAndHandle(routes, hostName, port)
 
     println(s"ActorSystem [$actorSystemName] started at http://$hostName:$port/\nPress RETURN to stop...")
 
     StdIn.readLine()
 
-    implicit val executionContext: ExecutionContextExecutor = system.dispatcher
     bindingFuture.flatMap(_.unbind()).onComplete(_ => system.terminate())
 
   }
