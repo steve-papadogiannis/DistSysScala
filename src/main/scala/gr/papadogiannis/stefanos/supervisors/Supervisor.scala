@@ -21,7 +21,7 @@ class Supervisor extends Actor with ActorLogging {
 
   override def receive: Receive = {
     case CreateInfrastructure =>
-      server = context.actorOf(Server.props, serverName)
+      server = context.actorOf(Server.props(), serverName)
       server ! CreateInfrastructure
     case request@CalculateDirections(_, _, _, _, _) =>
       server forward request
