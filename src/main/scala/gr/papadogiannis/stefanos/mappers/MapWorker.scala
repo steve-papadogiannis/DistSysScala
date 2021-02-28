@@ -1,39 +1,20 @@
 package gr.papadogiannis.stefanos.mappers
 
-import gr.papadogiannis.stefanos.models.{CalculateDirections, DirectionsResultWrapper, GeoPoint, GeoPointPair, RequestTrackMapper}
-import gr.papadogiannis.stefanos.mappers.MapWorker.{MapperRegistered, RespondMapResults}
-import akka.actor.{Actor, ActorLogging, ActorRef, Props}
+import gr.papadogiannis.stefanos.mappers.MapWorker.MapperRegistered
 import com.fasterxml.jackson.databind.ObjectMapper
+import akka.actor.{Actor, ActorLogging, Props}
 import com.google.maps.model.DirectionsResult
+import gr.papadogiannis.stefanos.models._
 
 import scala.io.Source
 
 object MapWorker {
-
-  def props(mapperId: String, reducersGroupActorRef: ActorRef, masterActorRef: ActorRef): Props =
-    Props(new MapWorker(mapperId, reducersGroupActorRef, masterActorRef))
-
-  final case class RecordTemperature(requestId: Long, value: Double)
-
-  final case class TemperatureRecorded(requestId: Long)
-
-  final case class ReadTemperature(requestId: Long)
-
-  final case class RespondTemperature(requestId: Long, value: Option[Double])
-
   object MapperRegistered
 
-  object AcknowledgeMaster
-
-  case class CalculateReduction(finalResult: Any)
-
-  case class RespondMapResults(request: CalculateDirections, valueOption: List[Map[GeoPointPair, DirectionsResult]])
-
+  def props(mapperId: String): Props = Props(new MapWorker(mapperId))
 }
 
-class MapWorker(mapperId: String, reducersGroupActorRef: ActorRef, masterActorRef: ActorRef)
-  extends Actor
-    with ActorLogging {
+class MapWorker(mapperId: String) extends Actor with ActorLogging {
 
   override def preStart(): Unit = log.info("Mapper actor {} started", mapperId)
 
@@ -42,7 +23,7 @@ class MapWorker(mapperId: String, reducersGroupActorRef: ActorRef, masterActorRe
   override def receive: Receive = {
     case RequestTrackMapper(_) =>
       sender() ! MapperRegistered
-    case request@CalculateDirections(requestId, startLat, startLong, endLat, endLong) =>
+    case request@CalculateDirections(_, startLat, startLong, endLat, endLong) =>
       val finalResult = map(new GeoPoint(startLat, startLong), new GeoPoint(endLat, endLong))
       sender() ! RespondMapResults(request, finalResult)
   }

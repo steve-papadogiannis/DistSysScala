@@ -1,38 +1,15 @@
 package gr.papadogiannis.stefanos.mappers
 
-import MappersGroup.{ReplyMapperList, RequestMapperList}
+import gr.papadogiannis.stefanos.models.{CalculateDirections, ReplyMapperList, RequestMapperList, RequestTrackMapper}
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Terminated}
-import com.google.maps.model.DirectionsResult
-import gr.papadogiannis.stefanos.models.{CalculateDirections, GeoPointPair, RequestTrackMapper}
 
 import scala.concurrent.duration._
 
 object MappersGroup {
-
-  def props(reducersGroupActorRef: ActorRef, masterActorRef: ActorRef): Props =
-    Props(new MappersGroup(reducersGroupActorRef, masterActorRef))
-
-  final case class RequestMapperList(requestId: Long)
-
-  final case class ReplyMapperList(requestId: Long, ids: Set[String])
-
-  sealed trait MapperResult
-
-  final case class ConcreteResult(value: List[Map[GeoPointPair, DirectionsResult]]) extends MapperResult
-
-  case object ResultNotAvailable extends MapperResult
-
-  case object MapperNotAvailable extends MapperResult
-
-  case object MapperTimedOut extends MapperResult
-
-  final case class RespondAllMapResults(request: CalculateDirections, results: Map[String, MapperResult])
-
+  def props(masterActorRef: ActorRef): Props = Props(new MappersGroup(masterActorRef))
 }
 
-class MappersGroup(reducersGroupActorRef: ActorRef, masterActorRef: ActorRef)
-  extends Actor
-    with ActorLogging {
+class MappersGroup(masterActorRef: ActorRef) extends Actor with ActorLogging {
 
   var mapperIdToActor = Map.empty[String, ActorRef]
 
@@ -51,9 +28,7 @@ class MappersGroup(reducersGroupActorRef: ActorRef, masterActorRef: ActorRef)
           log.info("Creating mapper actor [{}]", mapperId)
           val mapperActor = context.actorOf(
             MapWorker.props(
-              mapperId,
-              reducersGroupActorRef,
-              masterActorRef),
+              mapperId),
             s"$mapperId")
           mapperIdToActor += mapperId -> mapperActor
           actorToMapperId += mapperActor -> mapperId

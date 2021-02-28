@@ -1,9 +1,7 @@
 package gr.papadogiannis.stefanos.masters
 
-import gr.papadogiannis.stefanos.reducers.ReducersGroup.{RespondAllReduceResults}
-import gr.papadogiannis.stefanos.models.{CalculateDirections, CalculateReduction, FinalResponse, GeoPoint, GeoPointPair, RequestTrackMapper, RequestTrackReducer}
+import gr.papadogiannis.stefanos.models.{CalculateDirections, CalculateReduction, ConcreteMapperResult, ConcreteReducerResult, FinalResponse, GeoPoint, GeoPointPair, RequestTrackMapper, RequestTrackReducer, RespondAllMapResults, RespondAllReduceResults}
 import com.google.maps.model.{DirectionsLeg, DirectionsResult, DirectionsRoute}
-import gr.papadogiannis.stefanos.mappers.MappersGroup.RespondAllMapResults
 import gr.papadogiannis.stefanos.Main.CreateInfrastructure
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import gr.papadogiannis.stefanos.reducers.ReducersGroup
@@ -18,9 +16,9 @@ class Master extends Actor with ActorLogging {
   val reducersGroupActorName = "reducers-group-actor"
   val mappersGroupActorName = "mappers-group-actor"
 
-  var mappersGroupActor: ActorRef = _
-
   var reducersGroupActor: ActorRef = _
+
+  var mappersGroupActor: ActorRef = _
 
   var requester: ActorRef = _
 
@@ -31,10 +29,10 @@ class Master extends Actor with ActorLogging {
   override def receive: Receive = {
     case CreateInfrastructure =>
       log.info("Creating reducers group actor.")
-      reducersGroupActor = context.actorOf(ReducersGroup.props(mappersGroupActor, this.self), reducersGroupActorName)
+      reducersGroupActor = context.actorOf(ReducersGroup.props(), reducersGroupActorName)
       reducersGroupActor ! RequestTrackReducer("moscow")
       log.info("Creating mappers group actor.")
-      mappersGroupActor = context.actorOf(MappersGroup.props(reducersGroupActor, this.self), mappersGroupActorName)
+      mappersGroupActor = context.actorOf(MappersGroup.props(this.self), mappersGroupActorName)
       context.watch(mappersGroupActor)
       mappersGroupActor ! RequestTrackMapper("havana")
       mappersGroupActor ! RequestTrackMapper("sao-paolo")
@@ -44,14 +42,14 @@ class Master extends Actor with ActorLogging {
       requester = sender()
       mappersGroupActor forward request
     case RespondAllMapResults(request, results) =>
-      val merged = results.filter(x => x._2.isInstanceOf[MappersGroup.ConcreteResult])
+      val merged = results.filter(x => x._2.isInstanceOf[ConcreteMapperResult])
         .foldLeft[List[Map[GeoPointPair, DirectionsResult]]](List.empty[Map[GeoPointPair, DirectionsResult]])((x, y) =>
-          x ++ y._2.asInstanceOf[MappersGroup.ConcreteResult].value)
+          x ++ y._2.asInstanceOf[ConcreteMapperResult].value)
       reducersGroupActor ! CalculateReduction(request.requestId, merged)
     case RespondAllReduceResults(request, results) =>
-      val merged = results.filter(x => x._2.isInstanceOf[ReducersGroup.ConcreteResult])
+      val merged = results.filter(x => x._2.isInstanceOf[ConcreteReducerResult])
         .foldLeft[Map[GeoPointPair, List[DirectionsResult]]](Map.empty[GeoPointPair, List[DirectionsResult]])((x, y) =>
-          x + (y._1.asInstanceOf[GeoPointPair] -> y._2.asInstanceOf[ReducersGroup.ConcreteResult].valueOption.asInstanceOf[List[DirectionsResult]]))
+          x + (y._1.asInstanceOf[GeoPointPair] -> y._2.asInstanceOf[ConcreteReducerResult].valueOption.asInstanceOf[List[DirectionsResult]]))
       val value = calculateEuclideanMin(merged)
       requester ! FinalResponse(request, value)
   }

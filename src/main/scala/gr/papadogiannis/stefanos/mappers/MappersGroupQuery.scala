@@ -1,26 +1,25 @@
 package gr.papadogiannis.stefanos.mappers
 
-import MappersGroupQuery.CollectionTimeout
+import gr.papadogiannis.stefanos.models.{CalculateDirections, ConcreteMapperResult, MapperNotAvailable, MapperResult, MapperTimedOut, RespondAllMapResults, RespondMapResults}
 import akka.actor.{Actor, ActorLogging, ActorRef, Cancellable, Props, Terminated}
-import gr.papadogiannis.stefanos.models.CalculateDirections
+import MappersGroupQuery.CollectionTimeout
 
 import scala.concurrent.duration.FiniteDuration
 
 object MappersGroupQuery {
-
   case object CollectionTimeout
 
-  def props(actorToMapperId: Map[ActorRef, String], request: CalculateDirections,
-            requester: ActorRef, timeout: FiniteDuration): Props =
+  def props(actorToMapperId: Map[ActorRef, String],
+            request: CalculateDirections,
+            requester: ActorRef,
+            timeout: FiniteDuration): Props =
     Props(new MappersGroupQuery(actorToMapperId, request, requester, timeout))
-
 }
 
 class MappersGroupQuery(actorToMapperId: Map[ActorRef, String],
                         request: CalculateDirections,
-                        requester: ActorRef, timeout: FiniteDuration)
-  extends Actor
-    with ActorLogging {
+                        requester: ActorRef,
+                        timeout: FiniteDuration) extends Actor with ActorLogging {
 
   import context.dispatcher
 
@@ -40,32 +39,34 @@ class MappersGroupQuery(actorToMapperId: Map[ActorRef, String],
 
   override def receive: Receive = waitingForReplies(Map.empty, actorToMapperId.keySet)
 
-  def waitingForReplies(repliesSoFar: Map[String, MappersGroup.MapperResult],
+  def waitingForReplies(repliesSoFar: Map[String, MapperResult],
                         stillWaiting: Set[ActorRef]): Receive = {
-    case MapWorker.RespondMapResults(request, valueOption) =>
+    case RespondMapResults(_, valueOption) =>
       val mapperActor = sender()
-      val reading = MappersGroup.ConcreteResult(valueOption)
+      val reading = ConcreteMapperResult(valueOption)
       receivedResponse(mapperActor, reading, stillWaiting, repliesSoFar)
     case Terminated(mapperActor) =>
-      receivedResponse(mapperActor, MappersGroup.MapperNotAvailable, stillWaiting, repliesSoFar)
+      receivedResponse(mapperActor, MapperNotAvailable, stillWaiting, repliesSoFar)
     case CollectionTimeout =>
       val timedOutReplies =
         stillWaiting.map { mapperActor =>
           val mapperId = actorToMapperId(mapperActor)
-          mapperId -> MappersGroup.MapperTimedOut
+          mapperId -> MapperTimedOut
         }
-      requester ! MappersGroup.RespondAllMapResults(request, repliesSoFar ++ timedOutReplies)
+      requester ! RespondAllMapResults(request, repliesSoFar ++ timedOutReplies)
       context.stop(self)
   }
 
-  def receivedResponse(mapperActor: ActorRef, reading: MappersGroup.MapperResult,
-                       stillWaiting: Set[ActorRef], repliesSoFar: Map[String, MappersGroup.MapperResult]): Unit = {
+  def receivedResponse(mapperActor: ActorRef,
+                       reading: MapperResult,
+                       stillWaiting: Set[ActorRef],
+                       repliesSoFar: Map[String, MapperResult]): Unit = {
     context.unwatch(mapperActor)
     val deviceId = actorToMapperId(mapperActor)
     val newStillWaiting = stillWaiting - mapperActor
     val newRepliesSoFar = repliesSoFar + (deviceId -> reading)
     if (newStillWaiting.isEmpty) {
-      requester ! MappersGroup.RespondAllMapResults(request, newRepliesSoFar)
+      requester ! RespondAllMapResults(request, newRepliesSoFar)
       context.stop(self)
     } else {
       context.become(waitingForReplies(newRepliesSoFar, newStillWaiting))
