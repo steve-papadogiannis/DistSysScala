@@ -2,7 +2,6 @@ package gr.papadogiannis.stefanos.reducers
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Cancellable, Props, Terminated}
 import gr.papadogiannis.stefanos.reducers.ReducersGroupQuery.CollectionTimeout
-import gr.papadogiannis.stefanos.reducers.ReduceWorker.RespondReduceResult
 import gr.papadogiannis.stefanos.models._
 
 import scala.concurrent.duration.FiniteDuration

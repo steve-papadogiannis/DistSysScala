@@ -1,27 +1,16 @@
 package gr.papadogiannis.stefanos.reducers
 
-import ReduceWorker.{ReducerRegistered, RespondReduceResult}
 import akka.actor.{Actor, ActorLogging, Props}
-import com.google.maps.model.DirectionsResult
-import gr.papadogiannis.stefanos.models.{CalculateReduction, GeoPointPair, RequestTrackReducer}
+import gr.papadogiannis.stefanos.models.{CalculateReduction, GeoPointPair, RequestTrackReducer, RespondReduceResult}
+import gr.papadogiannis.stefanos.reducers.ReduceWorker.ReducerRegistered
 
 object ReduceWorker {
-
-  def props(reducerId: String): Props = Props(new ReduceWorker(reducerId))
-
-  case class ReadReduceResult(i: Int)
-
-  sealed trait ReducerResult
-
-  case class RespondReduceResult(requestId: Long, value: Map[GeoPointPair, List[DirectionsResult]]) extends ReducerResult
-
   object ReducerRegistered
 
+  def props(reducerId: String): Props = Props(new ReduceWorker(reducerId))
 }
 
-class ReduceWorker(name: String)
-  extends Actor
-    with ActorLogging {
+class ReduceWorker(name: String) extends Actor with ActorLogging {
 
   override def preStart(): Unit = log.info("Reducer actor {} started", name)
 
@@ -30,7 +19,7 @@ class ReduceWorker(name: String)
   override def receive: Receive = {
     case RequestTrackReducer(_) =>
       sender() ! ReducerRegistered
-    case request@CalculateReduction(requestId, merged) =>
+    case CalculateReduction(requestId, merged) =>
       val finalResult = reduce(merged)
       sender() ! RespondReduceResult(requestId, finalResult)
   }
