@@ -6,11 +6,15 @@ participant "Client Application" as Client
 actor User
 box Service
 boundary Main
+control Route
+control RequestHandler <<Actor>>
 control Supervisor <<Actor>>
 control Server <<Actor>>
 control Master <<Actor>>
 control ReducersGroup <<Actor>>
 control MappersGroup <<Actor>>
+control MappersGroupQuery <<Actor>>
+control ReducersGroupQuery <<Actor>>
 control ReduceWorker <<Actor>>
 control MapWorker <<Actor>>
 collections MemCache
@@ -24,6 +28,9 @@ autonumber "<b>[000]"
 
 User -> Main : Initializes System
 activate Main
+
+Main -> Route : Initializes Route
+activate Route
 
 activate Supervisor
 Main -> Supervisor : Sends "CreateInfrastructure" signal
@@ -64,11 +71,104 @@ MapWorker --> MappersGroup : Sends "MapperRegistered" signal
 
 == Runtime ==
 
+Client -> Route : Invokes "getDirections" endpoint
+
+Route -> RequestHandler : Creates actor
+activate RequestHandler
+Route -> RequestHandler : Sends request
+
+RequestHandler -> Supervisor : Sends "CalculateDirections" signal
+
+Supervisor -> Server : Forwards request
+
+Server -> Master : Forwards request
+
+Master -> MappersGroup : Forwards request
+
+MappersGroup -> MappersGroupQuery : Creates actor
+activate MappersGroupQuery
+
+MappersGroup -> MappersGroupQuery : Forwards request
+
+MappersGroupQuery -> MapWorker : Forwards request
+
+alt MapWorker responds with result
+
+MapWorker -> MappersGroupQuery : Sends map result
+
+MappersGroupQuery -> MappersGroupQuery : Stops self
+
+else MapWorker terminates
+
+MapWorker -> MappersGroupQuery : Sends "Terminated" signal
+
+MappersGroupQuery -> MappersGroupQuery : Stops self
+
+else Responses collection times out
+
+MappersGroupQuery -> MappersGroupQuery : Stops self
+
+end
+
+MappersGroupQuery -> Master : Sends "RespondAllMapResults" message
+
+deactivate MappersGroupQuery
+
+Master -> ReducersGroup : Sends "CalculateReduction" message
+
+ReducersGroup -> ReducersGroupQuery : Creates actor
+activate ReducersGroupQuery
+
+ReducersGroupQuery -> ReduceWorker : Forwards request
+
+alt ReduceWorker responds with result
+
+ReduceWorker -> ReducersGroupQuery : Sends reduce result
+
+ReducersGroupQuery -> ReducersGroupQuery : Stops self
+
+else ReduceWorker terminates
+
+ReduceWorker -> ReducersGroupQuery : Sends "Terminated" signal
+
+ReducersGroupQuery -> ReducersGroupQuery : Stops self
+
+else Responses collection times out
+
+ReducersGroupQuery -> ReducersGroupQuery : Stops self
+
+end
+
+ReducersGroupQuery -> Master : Sends "RespondAllReduceResults" message
+
+deactivate ReducersGroupQuery
+
+Master -> Master : Calculates euclidean minimum
+
+Master -> RequestHandler : Sends result
+
+RequestHandler -> Client : Sends result
+deactivate RequestHandler
+
 == Shutdown ==
 
 User -> Main : Submits any input
 
 Main -> Main : Terminates Actor System
+Main -> Supervisor : Terminate
+Supervisor -> Server : Terminate
+Server -> Master : Terminate
+Master -> MappersGroup : Terminate
+MappersGroup -> MapWorker : Terminate
+deactivate MapWorker
+Master -> ReducersGroup : Terminate
+ReducersGroup -> ReduceWorker : Terminate
+deactivate MappersGroup
+deactivate ReduceWorker
+deactivate ReducersGroup
+deactivate Master
+deactivate Server
+deactivate Supervisor
 deactivate Main
 
 @enduml
