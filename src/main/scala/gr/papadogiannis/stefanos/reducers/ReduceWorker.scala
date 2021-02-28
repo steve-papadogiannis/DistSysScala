@@ -1,8 +1,8 @@
 package gr.papadogiannis.stefanos.reducers
 
-import akka.actor.{Actor, ActorLogging, Props}
 import gr.papadogiannis.stefanos.models.{CalculateReduction, GeoPointPair, RequestTrackReducer, RespondReduceResult}
 import gr.papadogiannis.stefanos.reducers.ReduceWorker.ReducerRegistered
+import akka.actor.{Actor, ActorLogging, Props}
 
 object ReduceWorker {
   object ReducerRegistered
