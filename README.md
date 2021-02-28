@@ -1,6 +1,9 @@
 # Directions Map Reduce Server #
 
 [![Build Status](https://travis-ci.com/steve-papadogiannis/dist-sys-server-scala.svg?branch=master)](https://travis-ci.com/steve-papadogiannis/dist-sys-server-scala)
+[![Known Vulnerabilities](https://snyk.io/test/github/steve-papadogiannis/dist-sys-server-scala/badge.svg)](https://snyk.io/test/github/steve-papadogiannis/dist-sys-server-scala)
+
+
 
 A small project that takes directions queries and produces directions results in polynomial representation.
 
