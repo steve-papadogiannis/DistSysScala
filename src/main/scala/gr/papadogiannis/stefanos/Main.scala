@@ -10,44 +10,45 @@ import akka.http.scaladsl.Http
 import scala.concurrent.ExecutionContextExecutor
 import scala.io.StdIn
 
-object Main
-  extends Directives
-    with SimpleRoutes {
-
-  var counter: Long = 0L
-
-  val actorSystemName = "directions-map-reduce-actor-system"
-  val supervisorName = "supervisor"
+object Main extends Directives with SimpleRoutes {
 
   object CreateInfrastructure
 
-  def main(args: Array[String]): Unit = {
-
-    system = ActorSystem(actorSystemName)
-
-    implicit val materializer: ActorMaterializer = ActorMaterializer()
-
-    implicit val executionContext: ExecutionContextExecutor = system.dispatcher
-
-    val port = args.head.toInt;
-
-    val bindingFuture = Http().bindAndHandle(routes, "localhost", port)
-    supervisor = system.actorOf(Supervisor.props(), supervisorName)
-
-    supervisor ! CreateInfrastructure
-
-    println(s"ActorSystem [$actorSystemName] started at http://localhost:$port/\nPress RETURN to stop...")
-
-    StdIn.readLine()
-
-    bindingFuture.flatMap(_.unbind()).onComplete(_ => system.terminate())
-
-  }
+  val actorSystemName = "directions-map-reduce-actor-system"
+  val defaultHostName = "localhost"
+  val supervisorName = "supervisor"
+  val defaultPort: Int = 8383
 
   val routes: Route = BaseRoutes.baseRoutes ~ simpleRoutes
 
   implicit var system: ActorSystem = _
-
   var supervisor: ActorRef = _
+  var counter: Long = 0L
+
+  def main(args: Array[String]): Unit = {
+
+    val hostName = args.headOption.getOrElse(defaultHostName);
+    val port = Option(args)
+      .filter(args => args.length > 1)
+      .map(args => args(1))
+      .map(_.toInt)
+      .getOrElse(defaultPort)
+
+    system = ActorSystem(actorSystemName)
+
+    supervisor = system.actorOf(Supervisor.props(), supervisorName)
+    supervisor ! CreateInfrastructure
+
+    implicit val materializer: ActorMaterializer = ActorMaterializer()
+    val bindingFuture = Http().bindAndHandle(routes, hostName, port)
+
+    println(s"ActorSystem [$actorSystemName] started at http://$hostName:$port/\nPress RETURN to stop...")
+
+    StdIn.readLine()
+
+    implicit val executionContext: ExecutionContextExecutor = system.dispatcher
+    bindingFuture.flatMap(_.unbind()).onComplete(_ => system.terminate())
+
+  }
 
 }
