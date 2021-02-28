@@ -1,11 +1,11 @@
 package gr.papadogiannis.stefanos
 
 import gr.papadogiannis.stefanos.routes.{BaseRoutes, SimpleRoutes}
-import gr.papadogiannis.stefanos.supervisors.Supervisor
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.actor.{ActorRef, ActorSystem}
 import akka.stream.ActorMaterializer
 import akka.http.scaladsl.Http
+import gr.papadogiannis.stefanos.supervisors.Supervisor
 
 import scala.concurrent.ExecutionContextExecutor
 import scala.io.StdIn

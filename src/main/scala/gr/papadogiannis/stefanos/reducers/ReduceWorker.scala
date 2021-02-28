@@ -1,11 +1,9 @@
 package gr.papadogiannis.stefanos.reducers
 
 import ReduceWorker.{ReducerRegistered, RespondReduceResult}
-import ReducersGroup.CalculateReduction
-import gr.papadogiannis.stefanos.masters.Master.RequestTrackReducer
 import akka.actor.{Actor, ActorLogging, Props}
 import com.google.maps.model.DirectionsResult
-import gr.papadogiannis.stefanos.models.GeoPointPair
+import gr.papadogiannis.stefanos.models.{CalculateReduction, GeoPointPair, RequestTrackReducer}
 
 object ReduceWorker {
 

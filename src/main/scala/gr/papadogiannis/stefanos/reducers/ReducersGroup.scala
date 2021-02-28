@@ -1,10 +1,9 @@
 package gr.papadogiannis.stefanos.reducers
 
-import ReducersGroup.{CalculateReduction, ReplyReducerList, RequestReducerList}
-import gr.papadogiannis.stefanos.masters.Master.RequestTrackReducer
+import ReducersGroup.{ReplyReducerList, RequestReducerList}
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Terminated}
+import gr.papadogiannis.stefanos.models.{CalculateReduction, GeoPointPair, RequestTrackReducer}
 import com.google.maps.model.DirectionsResult
-import gr.papadogiannis.stefanos.models.GeoPointPair
 
 import scala.concurrent.duration._
 
@@ -32,7 +31,6 @@ object ReducersGroup {
 
   case class MapResult(value: Any)
 
-  case class CalculateReduction(requestId: Long, merged: List[Map[GeoPointPair, DirectionsResult]])
 
   case class ConcreteResult(valueOption: Map[GeoPointPair, List[DirectionsResult]]) extends ReducerResult
 

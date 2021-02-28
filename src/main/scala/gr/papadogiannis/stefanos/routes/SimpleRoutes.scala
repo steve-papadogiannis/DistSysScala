@@ -1,8 +1,6 @@
 package gr.papadogiannis.stefanos.routes
 
 import gr.papadogiannis.stefanos.Main.{counter, supervisor, system}
-import gr.papadogiannis.stefanos.servers.Server.CalculateDirections
-import gr.papadogiannis.stefanos.masters.Master.FinalResponse
 import RequestHandler.Handle
 import akka.http.scaladsl.server.directives.MethodDirectives.post
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
@@ -14,6 +12,7 @@ import com.google.maps.model.DirectionsResult
 import akka.actor.{Actor, ActorRef, Props}
 import akka.http.scaladsl.server.Route
 import akka.util.Timeout
+import gr.papadogiannis.stefanos.models.{CalculateDirections, FinalResponse}
 
 import scala.concurrent.duration._
 

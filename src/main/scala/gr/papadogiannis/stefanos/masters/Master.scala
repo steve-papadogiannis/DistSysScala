@@ -1,31 +1,22 @@
 package gr.papadogiannis.stefanos.masters
 
-import akka.actor.{Actor, ActorLogging, ActorRef, Props}
+import gr.papadogiannis.stefanos.reducers.ReducersGroup.{RespondAllReduceResults}
+import gr.papadogiannis.stefanos.models.{CalculateDirections, CalculateReduction, FinalResponse, GeoPoint, GeoPointPair, RequestTrackMapper, RequestTrackReducer}
 import com.google.maps.model.{DirectionsLeg, DirectionsResult, DirectionsRoute}
-import gr.papadogiannis.stefanos.Main.CreateInfrastructure
-import gr.papadogiannis.stefanos.mappers.MappersGroup
 import gr.papadogiannis.stefanos.mappers.MappersGroup.RespondAllMapResults
-import gr.papadogiannis.stefanos.masters.Master.{FinalResponse, RequestTrackMapper, RequestTrackReducer}
-import gr.papadogiannis.stefanos.models.{GeoPoint, GeoPointPair}
+import gr.papadogiannis.stefanos.Main.CreateInfrastructure
+import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import gr.papadogiannis.stefanos.reducers.ReducersGroup
-import gr.papadogiannis.stefanos.reducers.ReducersGroup.{CalculateReduction, RespondAllReduceResults}
-import gr.papadogiannis.stefanos.servers.Server.CalculateDirections
+import gr.papadogiannis.stefanos.mappers.MappersGroup
 
 object Master {
-
-  def props: Props = Props(new Master)
-
-  final case class RequestTrackMapper(str: String)
-
-  final case class RequestTrackReducer(a: String)
-
-  case class FinalResponse(request: ReducersGroup.CalculateReduction, results: DirectionsResult)
-
+  def props(): Props = Props(new Master)
 }
 
-class Master
-  extends Actor
-    with ActorLogging {
+class Master extends Actor with ActorLogging {
+
+  val reducersGroupActorName = "reducers-group-actor"
+  val mappersGroupActorName = "mappers-group-actor"
 
   var mappersGroupActor: ActorRef = _
 
@@ -36,9 +27,6 @@ class Master
   override def preStart(): Unit = log.info("Master started")
 
   override def postStop(): Unit = log.info("Master stopped")
-
-  val reducersGroupActorName = "reducers-group-actor"
-  val mappersGroupActorName = "mappers-group-actor"
 
   override def receive: Receive = {
     case CreateInfrastructure =>
