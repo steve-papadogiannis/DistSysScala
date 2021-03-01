@@ -21,7 +21,13 @@ A small project that takes directions queries and produces directions results in
 Below command should be issued inside project's directory:
 
 ```
-./sbt ++2.12.2 test
+sbt clean compile
 ```
 
 ## Run ##
+
+Below command should be issued inside project's directory:
+
+```
+sbt run
+```
