@@ -4,11 +4,11 @@ import gr.papadogiannis.stefanos.models.{CalculateReduction, GeoPointPair, Reduc
 import akka.actor.{Actor, ActorLogging, Props}
 import com.google.maps.model.DirectionsResult
 
-object ReduceWorker {
-  def props(reducerId: String): Props = Props(new ReduceWorker(reducerId))
+object ReducerWorker {
+  def props(reducerId: String): Props = Props(new ReducerWorker(reducerId))
 }
 
-class ReduceWorker(name: String) extends Actor with ActorLogging {
+class ReducerWorker(name: String) extends Actor with ActorLogging {
 
   override def preStart(): Unit = log.info("Reducer actor {} started", name)
 

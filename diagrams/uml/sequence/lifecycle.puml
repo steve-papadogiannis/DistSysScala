@@ -4,7 +4,7 @@ skinparam roundcorner 20
 
 participant "Client Application" as Client
 actor User
-box Service
+box Service [directions-map-reduce-actor-system]
 boundary Main
 control Route
 control RequestHandler <<Actor>>
@@ -15,8 +15,8 @@ control ReducersGroup <<Actor>>
 control MappersGroup <<Actor>>
 control MappersGroupQuery <<Actor>>
 control ReducersGroupQuery <<Actor>>
-control ReduceWorker <<Actor>>
-control MapWorker <<Actor>>
+control ReducerWorker <<Actor>>
+control MapperWorker <<Actor>>
 collections MemCache
 end box
 database Mongo
@@ -48,28 +48,28 @@ Master -> ReducersGroup : Sends "RequestTrackReducer" message
 ReducersGroup -> ReducersGroup : Checks if ReducerWorker with given name exists
 
 opt false
-ReducersGroup -> ReduceWorker : Creates actor
-activate ReduceWorker
+ReducersGroup -> ReducerWorker : Creates actor
+activate ReducerWorker
 end
 
-ReducersGroup -> ReduceWorker : Sends "RequestTrackReducer" message
+ReducersGroup -> ReducerWorker : Sends "RequestTrackReducer" message
 
-ReduceWorker --> ReducersGroup : Sends "ReducerRegistered" message
+ReducerWorker --> ReducersGroup : Sends "ReducerRegistered" message
 
 Master -> MappersGroup : Creates actor
 activate MappersGroup
 Master -> MappersGroup : Sends "RequestTrackMapper" message
 
-MappersGroup -> MappersGroup : Checks if MapWorker with given name exists
+MappersGroup -> MappersGroup : Checks if MapperWorker with given name exists
 
 opt false
-MappersGroup -> MapWorker : Creates actor
-activate MapWorker
+MappersGroup -> MapperWorker : Creates actor
+activate MapperWorker
 end
 
-MappersGroup -> MapWorker : Sends "RequestTrackMapper" message
+MappersGroup -> MapperWorker : Sends "RequestTrackMapper" message
 
-MapWorker --> MappersGroup : Sends "MapperRegistered" signal
+MapperWorker --> MappersGroup : Sends "MapperRegistered" signal
 
 Main -> Route : Initializes Route
 activate Route
@@ -95,17 +95,17 @@ activate MappersGroupQuery
 
 MappersGroup -> MappersGroupQuery : Forwards request
 
-MappersGroupQuery -> MapWorker : Forwards request
+MappersGroupQuery -> MapperWorker : Forwards request
 
-alt MapWorker responds with result
+alt MapperWorker responds with result
 
-MapWorker -> MappersGroupQuery : Sends map result
+MapperWorker -> MappersGroupQuery : Sends map result
 
 MappersGroupQuery -> MappersGroupQuery : Stops self
 
-else MapWorker terminates
+else MapperWorker terminates
 
-MapWorker -> MappersGroupQuery : Sends "Terminated" signal
+MapperWorker -> MappersGroupQuery : Sends "Terminated" signal
 
 MappersGroupQuery -> MappersGroupQuery : Stops self
 
@@ -124,17 +124,17 @@ Master -> ReducersGroup : Sends "CalculateReduction" message
 ReducersGroup -> ReducersGroupQuery : Creates actor
 activate ReducersGroupQuery
 
-ReducersGroupQuery -> ReduceWorker : Forwards request
+ReducersGroupQuery -> ReducerWorker : Forwards request
 
-alt ReduceWorker responds with result
+alt ReducerWorker responds with result
 
-ReduceWorker -> ReducersGroupQuery : Sends reduce result
+ReducerWorker -> ReducersGroupQuery : Sends reduce result
 
 ReducersGroupQuery -> ReducersGroupQuery : Stops self
 
-else ReduceWorker terminates
+else ReducerWorker terminates
 
-ReduceWorker -> ReducersGroupQuery : Sends "Terminated" signal
+ReducerWorker -> ReducersGroupQuery : Sends "Terminated" signal
 
 ReducersGroupQuery -> ReducersGroupQuery : Stops self
 
@@ -159,17 +159,28 @@ deactivate RequestHandler
 
 User -> Main : Submits any input
 
+Main -> Route : Terminates Route
+deactivate Route
+
 Main -> Main : Terminates Actor System
-Main -> Supervisor : Terminate
-Supervisor -> Server : Terminate
-Server -> Master : Terminate
-Master -> MappersGroup : Terminate
-MappersGroup -> MapWorker : Terminate
-deactivate MapWorker
-Master -> ReducersGroup : Terminate
-ReducersGroup -> ReduceWorker : Terminate
+
+Main -> Supervisor : Terminates Supervisor
+
+Supervisor -> Server : Terminates Server
+
+Server -> Master : Terminates Master
+
+Master -> ReducersGroup : Terminates ReducersGroup
+
+ReducersGroup -> ReducerWorker : Terminates ReducerWorker
+
+Master -> MappersGroup : Terminates MappersGroup
+
+MappersGroup -> MapperWorker : Terminates MapperWorker
+
+deactivate ReducerWorker
+deactivate MapperWorker
 deactivate MappersGroup
-deactivate ReduceWorker
 deactivate ReducersGroup
 deactivate Master
 deactivate Server

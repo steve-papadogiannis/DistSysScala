@@ -44,11 +44,14 @@ object Main extends Directives with SimpleRoutes {
 
     val bindingFuture = Http().bindAndHandle(routes, hostName, port)
 
-    println(s"ActorSystem [$actorSystemName] started at http://$hostName:$port/\nPress RETURN to stop...")
+    println(s"Http Server Binding bound at http://$hostName:$port/\nSubmit any input to STOP...")
 
     StdIn.readLine()
 
-    bindingFuture.flatMap(_.unbind()).onComplete(_ => system.terminate())
+    bindingFuture.flatMap(serverBinding => {
+      println(s"Http Server Binding unbound from http://$hostName:$port/")
+      serverBinding.unbind()
+    }).onComplete(_ => system.terminate())
 
   }
 

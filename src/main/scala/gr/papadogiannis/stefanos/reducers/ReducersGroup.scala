@@ -25,7 +25,7 @@ class ReducersGroup extends Actor with ActorLogging {
         case Some(reducerActor) => reducerActor
         case None =>
           log.info("Creating reducer actor [{}]", reducerName)
-          val reducerActor = context.actorOf(ReduceWorker.props(reducerName), s"$reducerName")
+          val reducerActor = context.actorOf(ReducerWorker.props(reducerName), s"$reducerName")
           reducerActor
       }
       reducerActor ! message
