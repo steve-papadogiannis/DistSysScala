@@ -7,11 +7,11 @@ import gr.papadogiannis.stefanos.models._
 
 import scala.io.Source
 
-object MapWorker {
-  def props(mapperId: String): Props = Props(new MapWorker(mapperId))
+object MapperWorker {
+  def props(mapperId: String): Props = Props(new MapperWorker(mapperId))
 }
 
-class MapWorker(mapperId: String) extends Actor with ActorLogging {
+class MapperWorker(mapperId: String) extends Actor with ActorLogging {
 
   override def preStart(): Unit = log.info("Mapper actor {} started", mapperId)
 

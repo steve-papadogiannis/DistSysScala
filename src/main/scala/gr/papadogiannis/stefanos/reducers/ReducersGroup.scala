@@ -11,37 +11,37 @@ object ReducersGroup {
 
 class ReducersGroup extends Actor with ActorLogging {
 
-  var reducerIdToActor = Map.empty[String, ActorRef]
+  var reducerNameToReducerActorRef = Map.empty[String, ActorRef]
 
-  var actorToReducerId = Map.empty[ActorRef, String]
+  var reducerActorRefToReducerName = Map.empty[ActorRef, String]
 
   override def preStart(): Unit = log.info("ReducersGroup started")
 
   override def postStop(): Unit = log.info("ReducersGroup stopped")
 
   override def receive: Receive = {
-    case RequestTrackReducer(reducerId) =>
-      val reducerActor = reducerIdToActor.get(reducerId) match {
+    case message@RequestTrackReducer(reducerName) =>
+      val reducerActor = reducerNameToReducerActorRef.get(reducerName) match {
         case Some(reducerActor) => reducerActor
         case None =>
-          log.info("Creating reducer actor [{}]", reducerId)
-          val reducerActor = context.actorOf(ReduceWorker.props(reducerId), s"$reducerId")
+          log.info("Creating reducer actor [{}]", reducerName)
+          val reducerActor = context.actorOf(ReduceWorker.props(reducerName), s"$reducerName")
           reducerActor
       }
-      reducerActor ! RequestTrackReducer(reducerId)
+      reducerActor ! message
     case Terminated(reducerActor) =>
-      val reducerId = actorToReducerId(reducerActor)
-      log.info("Reducer actor {} has been terminated", reducerId)
-      actorToReducerId -= reducerActor
-      reducerIdToActor -= reducerId
+      val reducerName = reducerActorRefToReducerName(reducerActor)
+      log.info("Reducer actor {} has been terminated", reducerName)
+      reducerActorRefToReducerName -= reducerActor
+      reducerNameToReducerActorRef -= reducerName
     case RequestReducerList(requestId) =>
-      sender() ! ReplyReducerList(requestId, reducerIdToActor.keySet)
+      sender() ! ReplyReducerList(requestId, reducerNameToReducerActorRef.keySet)
     case request@CalculateReduction(requestId, _) =>
-      context.actorOf(ReducersGroupQuery.props(actorToReducerId, request, sender(), 5.minutes), s"reducers-group-query-$requestId")
+      context.actorOf(ReducersGroupQuery.props(reducerActorRefToReducerName, request, sender(), 5.minutes), s"reducers-group-query-$requestId")
     case ReducerRegistered(reducerName) =>
       log.info("Registering Reducer Actor [{}]", reducerName)
-      reducerIdToActor += reducerName -> sender()
-      actorToReducerId += sender() -> reducerName
+      reducerNameToReducerActorRef += reducerName -> sender()
+      reducerActorRefToReducerName += sender() -> reducerName
   }
 
 }

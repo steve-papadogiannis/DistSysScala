@@ -11,37 +11,37 @@ object MappersGroup {
 
 class MappersGroup(masterActorRef: ActorRef) extends Actor with ActorLogging {
 
-  var mapperIdToActor = Map.empty[String, ActorRef]
+  var mapperNameToMapperActorRef = Map.empty[String, ActorRef]
 
-  var actorToMapperId = Map.empty[ActorRef, String]
+  var mapperActorRefToMapperName = Map.empty[ActorRef, String]
 
   override def preStart(): Unit = log.info("MappersGroup started")
 
   override def postStop(): Unit = log.info("MappersGroup stopped")
 
   override def receive: Receive = {
-    case RequestTrackMapper(mapperId) =>
-      val mapperActor = mapperIdToActor.get(mapperId) match {
+    case message@RequestTrackMapper(mapperName) =>
+      val mapperActor = mapperNameToMapperActorRef.get(mapperName) match {
         case Some(mapperActor) => mapperActor
         case None =>
-          log.info("Creating mapper actor [{}]", mapperId)
-          val mapperActor = context.actorOf(MapWorker.props(mapperId), s"$mapperId")
+          log.info("Creating mapper actor [{}]", mapperName)
+          val mapperActor = context.actorOf(MapperWorker.props(mapperName), s"$mapperName")
           mapperActor
       }
-      mapperActor ! RequestTrackMapper(mapperId)
+      mapperActor ! message
     case Terminated(mapperActor) =>
-      val mapperId = actorToMapperId(mapperActor)
-      log.info("Mapper actor {} has been terminated", mapperId)
-      actorToMapperId -= mapperActor
-      mapperIdToActor -= mapperId
+      val mapperName = mapperActorRefToMapperName(mapperActor)
+      log.info("Mapper actor {} has been terminated", mapperName)
+      mapperActorRefToMapperName -= mapperActor
+      mapperNameToMapperActorRef -= mapperName
     case RequestMapperList(requestId) =>
-      sender() ! ReplyMapperList(requestId, mapperIdToActor.keySet)
+      sender() ! ReplyMapperList(requestId, mapperNameToMapperActorRef.keySet)
     case request@CalculateDirections(requestId, _, _, _, _) =>
-      context.actorOf(MappersGroupQuery.props(actorToMapperId, request, masterActorRef, 5.minutes), s"mappers-group-query-$requestId")
+      context.actorOf(MappersGroupQuery.props(mapperActorRefToMapperName, request, masterActorRef, 5.minutes), s"mappers-group-query-$requestId")
     case MapperRegistered(mapperName) =>
       log.info("Registering Mapper Actor [{}]", mapperName)
-      mapperIdToActor += mapperName -> sender()
-      actorToMapperId += sender() -> mapperName
+      mapperNameToMapperActorRef += mapperName -> sender()
+      mapperActorRefToMapperName += sender() -> mapperName
   }
 
 }

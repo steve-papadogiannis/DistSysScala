@@ -2,6 +2,7 @@ package gr.papadogiannis.stefanos.reducers
 
 import gr.papadogiannis.stefanos.models.{CalculateReduction, GeoPointPair, ReducerRegistered, RequestTrackReducer, RespondReduceResult}
 import akka.actor.{Actor, ActorLogging, Props}
+import com.google.maps.model.DirectionsResult
 
 object ReduceWorker {
   def props(reducerId: String): Props = Props(new ReduceWorker(reducerId))
@@ -20,8 +21,6 @@ class ReduceWorker(name: String) extends Actor with ActorLogging {
       val finalResult = reduce(merged)
       sender() ! RespondReduceResult(requestId, finalResult)
   }
-
-  import com.google.maps.model.DirectionsResult
 
   def reduce(incoming: List[Map[GeoPointPair, DirectionsResult]]): Map[GeoPointPair, List[DirectionsResult]] = {
     incoming.foldLeft(Map.empty[GeoPointPair, List[DirectionsResult]])((accumulator, x) => {
