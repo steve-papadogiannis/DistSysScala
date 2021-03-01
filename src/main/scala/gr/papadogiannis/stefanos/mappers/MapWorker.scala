@@ -1,6 +1,5 @@
 package gr.papadogiannis.stefanos.mappers
 
-import gr.papadogiannis.stefanos.mappers.MapWorker.MapperRegistered
 import com.fasterxml.jackson.databind.ObjectMapper
 import akka.actor.{Actor, ActorLogging, Props}
 import com.google.maps.model.DirectionsResult
@@ -9,8 +8,6 @@ import gr.papadogiannis.stefanos.models._
 import scala.io.Source
 
 object MapWorker {
-  object MapperRegistered
-
   def props(mapperId: String): Props = Props(new MapWorker(mapperId))
 }
 
@@ -21,8 +18,8 @@ class MapWorker(mapperId: String) extends Actor with ActorLogging {
   override def postStop(): Unit = log.info("Mapper actor {} stopped", mapperId)
 
   override def receive: Receive = {
-    case RequestTrackMapper(_) =>
-      sender() ! MapperRegistered
+    case RequestTrackMapper(mapperName) =>
+      sender() ! MapperRegistered(mapperName)
     case request@CalculateDirections(_, startLat, startLong, endLat, endLong) =>
       val finalResult = map(new GeoPoint(startLat, startLong), new GeoPoint(endLat, endLong))
       sender() ! RespondMapResults(request, finalResult)

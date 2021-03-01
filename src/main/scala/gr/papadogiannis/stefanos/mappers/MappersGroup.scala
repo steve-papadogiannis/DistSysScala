@@ -1,6 +1,6 @@
 package gr.papadogiannis.stefanos.mappers
 
-import gr.papadogiannis.stefanos.models.{CalculateDirections, ReplyMapperList, RequestMapperList, RequestTrackMapper}
+import gr.papadogiannis.stefanos.models.{CalculateDirections, MapperRegistered, ReplyMapperList, RequestMapperList, RequestTrackMapper}
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Terminated}
 
 import scala.concurrent.duration._
@@ -26,8 +26,6 @@ class MappersGroup(masterActorRef: ActorRef) extends Actor with ActorLogging {
         case None =>
           log.info("Creating mapper actor [{}]", mapperId)
           val mapperActor = context.actorOf(MapWorker.props(mapperId), s"$mapperId")
-          mapperIdToActor += mapperId -> mapperActor
-          actorToMapperId += mapperActor -> mapperId
           mapperActor
       }
       mapperActor ! RequestTrackMapper(mapperId)
@@ -40,6 +38,10 @@ class MappersGroup(masterActorRef: ActorRef) extends Actor with ActorLogging {
       sender() ! ReplyMapperList(requestId, mapperIdToActor.keySet)
     case request@CalculateDirections(requestId, _, _, _, _) =>
       context.actorOf(MappersGroupQuery.props(actorToMapperId, request, masterActorRef, 5.minutes), s"mappers-group-query-$requestId")
+    case MapperRegistered(mapperName) =>
+      log.info("Registering Mapper Actor [{}]", mapperName)
+      mapperIdToActor += mapperName -> sender()
+      actorToMapperId += sender() -> mapperName
   }
 
 }

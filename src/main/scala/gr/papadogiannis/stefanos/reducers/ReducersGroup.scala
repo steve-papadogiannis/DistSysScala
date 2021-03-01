@@ -1,6 +1,6 @@
 package gr.papadogiannis.stefanos.reducers
 
-import gr.papadogiannis.stefanos.models.{CalculateReduction, ReplyReducerList, RequestReducerList, RequestTrackReducer}
+import gr.papadogiannis.stefanos.models.{CalculateReduction, ReducerRegistered, ReplyReducerList, RequestReducerList, RequestTrackReducer}
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Terminated}
 
 import scala.concurrent.duration._
@@ -26,8 +26,6 @@ class ReducersGroup extends Actor with ActorLogging {
         case None =>
           log.info("Creating reducer actor [{}]", reducerId)
           val reducerActor = context.actorOf(ReduceWorker.props(reducerId), s"$reducerId")
-          reducerIdToActor += reducerId -> reducerActor
-          actorToReducerId += reducerActor -> reducerId
           reducerActor
       }
       reducerActor ! RequestTrackReducer(reducerId)
@@ -40,6 +38,10 @@ class ReducersGroup extends Actor with ActorLogging {
       sender() ! ReplyReducerList(requestId, reducerIdToActor.keySet)
     case request@CalculateReduction(requestId, _) =>
       context.actorOf(ReducersGroupQuery.props(actorToReducerId, request, sender(), 5.minutes), s"reducers-group-query-$requestId")
+    case ReducerRegistered(reducerName) =>
+      log.info("Registering Reducer Actor [{}]", reducerName)
+      reducerIdToActor += reducerName -> sender()
+      actorToReducerId += sender() -> reducerName
   }
 
 }
