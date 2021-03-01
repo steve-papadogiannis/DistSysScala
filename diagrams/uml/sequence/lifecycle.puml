@@ -29,20 +29,21 @@ autonumber "<b>[000]"
 User -> Main : Initializes System
 activate Main
 
-Main -> Route : Initializes Route
-activate Route
-
+Main -> Supervisor : Creates actor
 activate Supervisor
-Main -> Supervisor : Sends "CreateInfrastructure" signal
+Main -> Supervisor : Sends "CreateInfrastructure" message
 
+Supervisor -> Server : Creates actor
 activate Server
-Supervisor -> Server : Sends "CreateInfrastructure" signal
+Supervisor -> Server : Sends "CreateInfrastructure" message
 
+Server -> Master : Creates actor
 activate Master
-Server -> Master : Sends "CreateInfrastructure" signal
+Server -> Master : Sends "CreateInfrastructure" message
 
+Master -> ReducersGroup : Creates actor
 activate ReducersGroup
-Master -> ReducersGroup : Sends "RequestTrackReducer" signal
+Master -> ReducersGroup : Sends "RequestTrackReducer" message
 
 ReducersGroup -> ReducersGroup : Checks if ReducerWorker with given name exists
 
@@ -51,12 +52,13 @@ ReducersGroup -> ReduceWorker : Creates actor
 activate ReduceWorker
 end
 
-ReducersGroup -> ReduceWorker : Forwards request
+ReducersGroup -> ReduceWorker : Sends "RequestTrackReducer" message
 
-ReduceWorker --> ReducersGroup : Sends "ReducerRegistered" signal
+ReduceWorker --> ReducersGroup : Sends "ReducerRegistered" message
 
+Master -> MappersGroup : Creates actor
 activate MappersGroup
-Master -> MappersGroup : Sends "RequestTrackMapper" signal
+Master -> MappersGroup : Sends "RequestTrackMapper" message
 
 MappersGroup -> MappersGroup : Checks if MapWorker with given name exists
 
@@ -65,9 +67,12 @@ MappersGroup -> MapWorker : Creates actor
 activate MapWorker
 end
 
-MappersGroup -> MapWorker : Forwards request
+MappersGroup -> MapWorker : Sends "RequestTrackMapper" message
 
 MapWorker --> MappersGroup : Sends "MapperRegistered" signal
+
+Main -> Route : Initializes Route
+activate Route
 
 == Runtime ==
 

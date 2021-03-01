@@ -20,17 +20,17 @@ class ReducersGroup extends Actor with ActorLogging {
   override def postStop(): Unit = log.info("ReducersGroup stopped")
 
   override def receive: Receive = {
-    case request@RequestTrackReducer(reducerId) =>
-      reducerIdToActor.get(reducerId) match {
-        case Some(reducerActor) =>
-          reducerActor forward request
+    case RequestTrackReducer(reducerId) =>
+      val reducerActor = reducerIdToActor.get(reducerId) match {
+        case Some(reducerActor) => reducerActor
         case None =>
           log.info("Creating reducer actor [{}]", reducerId)
           val reducerActor = context.actorOf(ReduceWorker.props(reducerId), s"$reducerId")
           reducerIdToActor += reducerId -> reducerActor
           actorToReducerId += reducerActor -> reducerId
-          reducerActor forward request
+          reducerActor
       }
+      reducerActor ! RequestTrackReducer(reducerId)
     case Terminated(reducerActor) =>
       val reducerId = actorToReducerId(reducerActor)
       log.info("Reducer actor {} has been terminated", reducerId)

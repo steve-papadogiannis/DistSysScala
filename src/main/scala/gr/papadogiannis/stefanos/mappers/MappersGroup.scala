@@ -20,20 +20,17 @@ class MappersGroup(masterActorRef: ActorRef) extends Actor with ActorLogging {
   override def postStop(): Unit = log.info("MappersGroup stopped")
 
   override def receive: Receive = {
-    case request@RequestTrackMapper(mapperId) =>
-      mapperIdToActor.get(mapperId) match {
-        case Some(mapperActor) =>
-          mapperActor forward request
+    case RequestTrackMapper(mapperId) =>
+      val mapperActor = mapperIdToActor.get(mapperId) match {
+        case Some(mapperActor) => mapperActor
         case None =>
           log.info("Creating mapper actor [{}]", mapperId)
-          val mapperActor = context.actorOf(
-            MapWorker.props(
-              mapperId),
-            s"$mapperId")
+          val mapperActor = context.actorOf(MapWorker.props(mapperId), s"$mapperId")
           mapperIdToActor += mapperId -> mapperActor
           actorToMapperId += mapperActor -> mapperId
-          mapperActor forward request
+          mapperActor
       }
+      mapperActor ! RequestTrackMapper(mapperId)
     case Terminated(mapperActor) =>
       val mapperId = actorToMapperId(mapperActor)
       log.info("Mapper actor {} has been terminated", mapperId)
@@ -42,12 +39,7 @@ class MappersGroup(masterActorRef: ActorRef) extends Actor with ActorLogging {
     case RequestMapperList(requestId) =>
       sender() ! ReplyMapperList(requestId, mapperIdToActor.keySet)
     case request@CalculateDirections(requestId, _, _, _, _) =>
-      context.actorOf(
-        MappersGroupQuery.props(
-          actorToMapperId,
-          request,
-          masterActorRef,
-          5.minutes), s"mappers-group-query-$requestId")
+      context.actorOf(MappersGroupQuery.props(actorToMapperId, request, masterActorRef, 5.minutes), s"mappers-group-query-$requestId")
   }
 
 }
