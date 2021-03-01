@@ -21,7 +21,7 @@ class RequestHandler() extends Actor {
       complete = f
       supervisor ! CalculateDirections(requestId, startLat, startLong, endLat, endLong)
     case FinalResponse(_, results) =>
-      complete(results)
+      complete(results.orNull)
   }
 
 }

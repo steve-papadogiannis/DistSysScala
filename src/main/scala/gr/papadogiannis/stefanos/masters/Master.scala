@@ -1,11 +1,11 @@
 package gr.papadogiannis.stefanos.masters
 
 import gr.papadogiannis.stefanos.models.{CalculateDirections, CalculateReduction, ConcreteMapperResult, ConcreteReducerResult, FinalResponse, GeoPoint, GeoPointPair, MapperResult, ReducerResult, RequestTrackMapper, RequestTrackReducer, RespondAllMapResults, RespondAllReduceResults}
-import com.google.maps.model.{DirectionsLeg, DirectionsResult, DirectionsRoute}
 import gr.papadogiannis.stefanos.Main.CreateInfrastructure
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import gr.papadogiannis.stefanos.reducers.ReducersGroup
 import gr.papadogiannis.stefanos.mappers.MappersGroup
+import com.google.maps.model.DirectionsResult
 
 object Master {
   def props(): Props = Props(new Master)
@@ -63,71 +63,47 @@ class Master extends Actor with ActorLogging {
         x ++ y._2.asInstanceOf[ConcreteMapperResult].value)
   }
 
-  import com.google.maps.model.DirectionsResult
+  def getMinimum(result: Map[GeoPointPair, List[DirectionsResult]]): Option[(GeoPointPair, List[DirectionsResult])] = {
+    val startLatitude: Double = 30.0
+    val startLongitude: Double = 23.0
+    val endLatitude: Double = 29.0
+    val endLongitude: Double = 43.0
+    val startReferencePoint = new GeoPoint(startLatitude, startLongitude)
+    val endReferencePoint = new GeoPoint(endLatitude, endLongitude)
+    result.reduceLeftOption((previousMin, pair) => {
+      val sumPreviousPair = getEuclideanDistance(startReferencePoint, previousMin) + getEuclideanDistance(endReferencePoint, previousMin)
+      val sumPair = getEuclideanDistance(startReferencePoint, pair) + getEuclideanDistance(endReferencePoint, pair)
+      if (sumPreviousPair > sumPair)
+        pair
+      else
+        previousMin
+    })
+  }
 
-  import java.util
+  private def getEuclideanDistance(referenceGeoPoint: GeoPoint, tuple: (GeoPointPair, List[DirectionsResult])) = {
+    tuple._1.getStartGeoPoint.euclideanDistance(referenceGeoPoint)
+  }
 
-  var startLatitude: Double = 30.0
+  def calculateEuclideanMin(result: Map[GeoPointPair, List[DirectionsResult]]): Option[DirectionsResult] = {
+    val min: Option[(GeoPointPair, List[DirectionsResult])] = getMinimum(result);
+    val minDirectionsResultList = min.map(_._2)
+    minDirectionsResultList.map(_.reduceLeft((previousMinDirectionsResult, currentDirectionsResult) => {
+      val totalDurationOfMin = getTotalDuration(previousMinDirectionsResult)
+      val totalDurationOfIteratee = getTotalDuration(currentDirectionsResult)
+      if (totalDurationOfIteratee < totalDurationOfMin)
+        currentDirectionsResult
+      else
+        previousMinDirectionsResult
+    }))
+  }
 
-  var startLongitude: Double = 23.0
-
-  var endLatitude: Double = 29.0
-
-  var endLongitude: Double = 43.0
-
-  def calculateEuclideanMin(result: Map[GeoPointPair, List[DirectionsResult]]): DirectionsResult =
-    if (result.isEmpty) null
-    else {
-      var min: Tuple2[GeoPointPair, List[DirectionsResult]] = null
-      val startGeoPoint = new GeoPoint(startLatitude, startLongitude)
-      val endGeoPoint = new GeoPoint(endLatitude, endLongitude)
-      for ((key, value) <- result) {
-        if (min == null || min._1.getStartGeoPoint.euclideanDistance(startGeoPoint) + min._1.getEndGeoPoint.euclideanDistance(endGeoPoint) >
-          key.getStartGeoPoint.euclideanDistance(startGeoPoint) + key.getEndGeoPoint.euclideanDistance(endGeoPoint)) min = (key, value)
-      }
-      val minDirectionsResultList =
-        if (min != null)
-          min._2
-        else
-          null
-      if (minDirectionsResultList != null && minDirectionsResultList.nonEmpty) {
-        var minDirectionsResult: DirectionsResult = null
-        for (directionsResult <- minDirectionsResultList) {
-          if (minDirectionsResult == null)
-            minDirectionsResult = directionsResult
-          else {
-            val totalDurationOfMin = Array(0L)
-            val totalDurationOfIteratee = Array(0L)
-            util.Arrays.stream(minDirectionsResult.routes).forEach((x: DirectionsRoute) => {
-              def foo(x: DirectionsRoute) = util.Arrays.stream(x.legs).forEach((y: DirectionsLeg) => {
-                def foo(y: DirectionsLeg) = {
-                  totalDurationOfMin(0) += y.duration.inSeconds
-                }
-
-                foo(y)
-              })
-
-              foo(x)
-            })
-            util.Arrays.stream(directionsResult.routes).forEach((x: DirectionsRoute) => {
-              def foo(x: DirectionsRoute) = util.Arrays.stream(x.legs).forEach((y: DirectionsLeg) => {
-                def foo(y: DirectionsLeg) = {
-                  totalDurationOfIteratee(0) += y.duration.inSeconds
-                }
-
-                foo(y)
-              })
-
-              foo(x)
-            })
-            if (totalDurationOfIteratee(0) < totalDurationOfMin(0))
-              minDirectionsResult = directionsResult
-          }
-        }
-        minDirectionsResult
-      }
-      else null
-    }
+  private def getTotalDuration(directionsResult: DirectionsResult) = {
+    directionsResult.routes.foldLeft(0L)((accumulator, directionsRoute) => {
+      accumulator + directionsRoute.legs.foldLeft(0L)((accumulatorInner, directionsLeg) => {
+        accumulatorInner + directionsLeg.duration.inSeconds
+      })
+    })
+  }
 
 }
 
