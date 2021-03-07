@@ -18,3 +18,6 @@ libraryDependencies += "com.typesafe.akka" % "akka-http_2.12" % "10.0.9"
 
 // https://mvnrepository.com/artifact/com.typesafe.akka/akka-http-spray-json
 libraryDependencies += "com.typesafe.akka" %% "akka-http-spray-json" % "10.0.9"
+
+// https://mvnrepository.com/artifact/org.mongodb.scala/mongo-scala-driver
+libraryDependencies += "org.mongodb.scala" %% "mongo-scala-driver" % "4.2.2"

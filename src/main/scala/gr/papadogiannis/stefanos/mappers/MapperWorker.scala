@@ -74,8 +74,8 @@ class MapperWorker(mapperId: String) extends Actor with ActorLogging {
       ipPortHash % 4
     val resultsThatThisWorkerIsInChargeOf = result.filter(x => {
       def foo(x: DirectionsResultWrapper) = {
-        val geoPointsHash = calculateHash(x.startPoint.getLatitude.toString + x.startPoint.getLongitude.toString +
-          x.endPoint.getLatitude.toString + x.endPoint.getLongitude.toString)
+        val geoPointsHash = calculateHash(x.startPoint.latitude.toString + x.startPoint.longitude.toString +
+          x.endPoint.latitude.toString + x.endPoint.longitude.toString)
         val geoPointsHashMod4 = if (geoPointsHash % 4 < 0)
           -(geoPointsHash % 4)
         else
@@ -88,17 +88,17 @@ class MapperWorker(mapperId: String) extends Actor with ActorLogging {
     val finalResult: List[Map[GeoPointPair, DirectionsResult]] = resultsThatThisWorkerIsInChargeOf.map(x => {
       def foo(x: DirectionsResultWrapper): Map[GeoPointPair, DirectionsResult] = {
         val map = Map.empty[GeoPointPair, DirectionsResult]
-        val isStartLatitudeNearIssuedStartLatitude = Math.abs(startGeoPoint.getLatitude - x.startPoint.getLatitude) < 0.0001
-        val isStartLongitudeNearIssuedStartLongitude = Math.abs(startGeoPoint.getLongitude - x.startPoint.getLongitude) < 0.0001
-        val isEndLatitudeNearIssuedEndLatitude = Math.abs(endGeoPoint.getLatitude - x.endPoint.getLatitude) < 0.0001
-        val isEndLongitudeNearIssuedEndLongitude = Math.abs(endGeoPoint.getLongitude - x.endPoint.getLongitude) < 0.0001
+        val isStartLatitudeNearIssuedStartLatitude = Math.abs(startGeoPoint.latitude - x.startPoint.latitude) < 0.0001
+        val isStartLongitudeNearIssuedStartLongitude = Math.abs(startGeoPoint.longitude - x.startPoint.longitude) < 0.0001
+        val isEndLatitudeNearIssuedEndLatitude = Math.abs(endGeoPoint.latitude - x.endPoint.latitude) < 0.0001
+        val isEndLongitudeNearIssuedEndLongitude = Math.abs(endGeoPoint.longitude - x.endPoint.longitude) < 0.0001
         if (isStartLatitudeNearIssuedStartLatitude &&
           isStartLongitudeNearIssuedStartLongitude &&
           isEndLatitudeNearIssuedEndLatitude &&
           isEndLongitudeNearIssuedEndLongitude) {
-          val geoPointPair = new GeoPointPair(new GeoPoint(roundTo2Decimals(x.startPoint.getLatitude),
-            roundTo2Decimals(x.startPoint.getLongitude)), new GeoPoint(roundTo2Decimals(x.endPoint.getLatitude),
-            roundTo2Decimals(x.endPoint.getLongitude)))
+          val geoPointPair = new GeoPointPair(new GeoPoint(roundTo2Decimals(x.startPoint.latitude),
+            roundTo2Decimals(x.startPoint.longitude)), new GeoPoint(roundTo2Decimals(x.endPoint.latitude),
+            roundTo2Decimals(x.endPoint.longitude)))
           map + (geoPointPair -> x.directionsResult)
         }
         map
