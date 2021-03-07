@@ -75,33 +75,37 @@ class MapperWorker(mapperId: String) extends Actor with ActorLogging {
     val mapperHash: Long = getMapperHash
     collection
       .find[DirectionsResultWrapper]()
-      .filter(x => {
-        val geoPointsHashMod4: Long = getGeoPointsHash(x)
+      .filter(directionsResultWrapper => {
+        val geoPointsHashMod4: Long = getGeoPointsHash(directionsResultWrapper)
         mapperHash == geoPointsHashMod4
       })
-      .map(x => {
+      .map(directionsResultWrapper => {
         val map = Map.empty[GeoPointPair, DirectionsResult]
-        val isStartLatitudeNearIssuedStartLatitude = Math.abs(startGeoPoint.latitude - x.startPoint.latitude) < 0.0001
-        val isStartLongitudeNearIssuedStartLongitude = Math.abs(startGeoPoint.longitude - x.startPoint.longitude) < 0.0001
-        val isEndLatitudeNearIssuedEndLatitude = Math.abs(endGeoPoint.latitude - x.endPoint.latitude) < 0.0001
-        val isEndLongitudeNearIssuedEndLongitude = Math.abs(endGeoPoint.longitude - x.endPoint.longitude) < 0.0001
+        val isStartLatitudeNearIssuedStartLatitude = checkIfNear(startGeoPoint.latitude, directionsResultWrapper.startPoint.latitude)
+        val isStartLongitudeNearIssuedStartLongitude = checkIfNear(startGeoPoint.longitude, directionsResultWrapper.startPoint.longitude)
+        val isEndLatitudeNearIssuedEndLatitude = checkIfNear(endGeoPoint.latitude, directionsResultWrapper.endPoint.latitude)
+        val isEndLongitudeNearIssuedEndLongitude = checkIfNear(endGeoPoint.longitude, directionsResultWrapper.endPoint.longitude)
         if (isStartLatitudeNearIssuedStartLatitude &&
           isStartLongitudeNearIssuedStartLongitude &&
           isEndLatitudeNearIssuedEndLatitude &&
           isEndLongitudeNearIssuedEndLongitude) {
-          val geoPointPair = new GeoPointPair(
+          val geoPointPair = GeoPointPair(
             GeoPoint(
-              roundTo2Decimals(x.startPoint.latitude),
-              roundTo2Decimals(x.startPoint.longitude)),
+              roundTo2Decimals(directionsResultWrapper.startPoint.latitude),
+              roundTo2Decimals(directionsResultWrapper.startPoint.longitude)),
             GeoPoint(
-              roundTo2Decimals(x.endPoint.latitude),
-              roundTo2Decimals(x.endPoint.longitude)))
-          map + (geoPointPair -> x.directionsResult)
+              roundTo2Decimals(directionsResultWrapper.endPoint.latitude),
+              roundTo2Decimals(directionsResultWrapper.endPoint.longitude)))
+          map + (geoPointPair -> directionsResultWrapper.directionsResult)
         }
         map
       })
-      .filter(x => x.nonEmpty)
+      .filter(map => map.nonEmpty)
       .collect()
+  }
+
+  private def checkIfNear(firstPoint: Double, secondPoint: Double) = {
+    Math.abs(firstPoint - secondPoint) < 0.0001
   }
 
   private def getGeoPointsHash(x: DirectionsResultWrapper) = {
@@ -135,7 +139,7 @@ class MapperWorker(mapperId: String) extends Actor with ActorLogging {
   private def getMongoClientSettings(codecRegistries: CodecRegistry) = {
     MongoClientSettings
       .builder()
-      .applyConnectionString(new ConnectionString(getMongoConnectionString))
+      .applyConnectionString(ConnectionString(getMongoConnectionString))
       .codecRegistry(codecRegistries)
       .build()
   }

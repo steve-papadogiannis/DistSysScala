@@ -1,9 +1,3 @@
 package gr.papadogiannis.stefanos.models
 
-class GeoPointPair(startGeoPoint: GeoPoint, endGeoPoint: GeoPoint) {
-
-  def getStartGeoPoint: GeoPoint = startGeoPoint
-
-  def getEndGeoPoint: GeoPoint = endGeoPoint
-
-}
+case class GeoPointPair(startGeoPoint: GeoPoint, endGeoPoint: GeoPoint)

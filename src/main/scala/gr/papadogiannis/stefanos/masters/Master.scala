@@ -80,7 +80,7 @@ class Master extends Actor with ActorLogging {
   }
 
   private def getEuclideanDistance(referenceGeoPoint: GeoPoint, tuple: (GeoPointPair, List[DirectionsResult])) = {
-    tuple._1.getStartGeoPoint.euclideanDistance(referenceGeoPoint)
+    tuple._1.startGeoPoint.euclideanDistance(referenceGeoPoint)
   }
 
   def calculateEuclideanMin(result: Map[GeoPointPair, List[DirectionsResult]]): Option[DirectionsResult] = {
