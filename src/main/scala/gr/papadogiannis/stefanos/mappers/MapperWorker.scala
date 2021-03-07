@@ -1,10 +1,11 @@
 package gr.papadogiannis.stefanos.mappers
 
-import com.fasterxml.jackson.databind.ObjectMapper
+import org.mongodb.scala.{ConnectionString, MongoClient, MongoClientSettings, Observable}
+import org.bson.codecs.configuration.CodecRegistries.{fromProviders, fromRegistries}
+import org.mongodb.scala.MongoClient.DEFAULT_CODEC_REGISTRY
 import akka.actor.{Actor, ActorLogging, Props}
+import org.mongodb.scala.bson.codecs.Macros._
 import gr.papadogiannis.stefanos.models._
-
-import scala.io.Source
 
 object MapperWorker {
   def props(mapperId: String): Props = Props(new MapperWorker(mapperId))
@@ -20,8 +21,14 @@ class MapperWorker(mapperId: String) extends Actor with ActorLogging {
     case RequestTrackMapper(mapperName) =>
       sender() ! MapperRegistered(mapperName)
     case request@CalculateDirections(_, startLat, startLong, endLat, endLong) =>
-      val finalResult = map(GeoPoint(startLat, startLong), GeoPoint(endLat, endLong))
-      sender() ! RespondMapResults(request, finalResult)
+      val senderActorRef = sender()
+      map(GeoPoint(startLat, startLong), GeoPoint(endLat, endLong))
+        .subscribe(finalResult => {
+          senderActorRef ! RespondMapResults(request, finalResult.toList)
+        }, throwable => {
+          log.error(throwable.toString)
+          log.error(throwable.getStackTrace.mkString("\n"))
+        })
   }
 
   def calculateHash(str: String): Long = {
@@ -58,21 +65,34 @@ class MapperWorker(mapperId: String) extends Actor with ActorLogging {
     decimalFormat.format(number).toDouble
   }
 
-  def map(startGeoPoint: GeoPoint, endGeoPoint: GeoPoint): List[Map[GeoPointPair, DirectionsResult]] = {
-    val filename = "5555_directions"
-    val mapper = new ObjectMapper()
-    val result: List[DirectionsResultWrapper] = Source
-      .fromFile(filename)
-      .getLines.map(line =>
-      mapper.readValue(line, classOf[DirectionsResultWrapper]))
-      .toList
+  def map(startGeoPoint: GeoPoint, endGeoPoint: GeoPoint): Observable[Seq[Map[GeoPointPair, DirectionsResult]]] = {
+    val codecs = fromRegistries(
+      fromProviders(
+        classOf[DirectionsResultWrapper],
+        classOf[GeoPoint],
+        classOf[DirectionsResult],
+        classOf[DirectionsRoute],
+        classOf[DirectionsLeg],
+        classOf[Duration],
+        classOf[DirectionsStep],
+        classOf[LatLng],
+        classOf[EncodedPolyline]
+      ),
+      DEFAULT_CODEC_REGISTRY)
+    val mongoClientSettings = MongoClientSettings
+      .builder()
+      .applyConnectionString(new ConnectionString("mongodb://root:example@localhost:27017"))
+      .codecRegistry(codecs)
+      .build()
+    val mongoClient = MongoClient(mongoClientSettings)
+    val database = mongoClient.getDatabase("dist-sys")
+    val collection = database.getCollection("directions")
     val ipPortHash = calculateHash("127.0.0.1" + 5555)
     val ipPortHashMod4 = if (ipPortHash % 4 < 0)
       -(ipPortHash % 4)
     else
       ipPortHash % 4
-    val resultsThatThisWorkerIsInChargeOf = result.filter(x => {
-      def foo(x: DirectionsResultWrapper) = {
+    collection.find[DirectionsResultWrapper]().filter(x => {
         val geoPointsHash = calculateHash(x.startPoint.latitude.toString + x.startPoint.longitude.toString +
           x.endPoint.latitude.toString + x.endPoint.longitude.toString)
         val geoPointsHashMod4 = if (geoPointsHash % 4 < 0)
@@ -80,12 +100,7 @@ class MapperWorker(mapperId: String) extends Actor with ActorLogging {
         else
           geoPointsHash % 4
         ipPortHashMod4 == geoPointsHashMod4
-      }
-
-      foo(x)
-    })
-    val finalResult: List[Map[GeoPointPair, DirectionsResult]] = resultsThatThisWorkerIsInChargeOf.map(x => {
-      def foo(x: DirectionsResultWrapper): Map[GeoPointPair, DirectionsResult] = {
+    }).map(x => {
         val map = Map.empty[GeoPointPair, DirectionsResult]
         val isStartLatitudeNearIssuedStartLatitude = Math.abs(startGeoPoint.latitude - x.startPoint.latitude) < 0.0001
         val isStartLongitudeNearIssuedStartLongitude = Math.abs(startGeoPoint.longitude - x.startPoint.longitude) < 0.0001
@@ -101,11 +116,7 @@ class MapperWorker(mapperId: String) extends Actor with ActorLogging {
           map + (geoPointPair -> x.directionsResult)
         }
         map
-      }
-
-      foo(x)
-    }).filter(x => x.nonEmpty)
-    finalResult
+    }).filter(x => x.nonEmpty).collect()
   }
 
 }
