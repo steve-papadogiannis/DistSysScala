@@ -1,9 +1,8 @@
 package gr.papadogiannis.stefanos.handlers
 
-import gr.papadogiannis.stefanos.models.{CalculateDirections, FinalResponse, Handle}
+import gr.papadogiannis.stefanos.models.{CalculateDirections, DirectionsResult, FinalResponse, Handle}
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import gr.papadogiannis.stefanos.Main.supervisor
-import com.google.maps.model.DirectionsResult
 
 object RequestHandler {
   def props(): Props = Props(new RequestHandler())

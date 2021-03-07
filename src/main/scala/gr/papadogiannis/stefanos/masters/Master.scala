@@ -1,11 +1,10 @@
 package gr.papadogiannis.stefanos.masters
 
-import gr.papadogiannis.stefanos.models.{CalculateDirections, CalculateReduction, ConcreteMapperResult, ConcreteReducerResult, FinalResponse, GeoPoint, GeoPointPair, MapperResult, ReducerResult, RequestTrackMapper, RequestTrackReducer, RespondAllMapResults, RespondAllReduceResults}
+import gr.papadogiannis.stefanos.models.{CalculateDirections, CalculateReduction, ConcreteMapperResult, ConcreteReducerResult, DirectionsResult, FinalResponse, GeoPoint, GeoPointPair, MapperResult, ReducerResult, RequestTrackMapper, RequestTrackReducer, RespondAllMapResults, RespondAllReduceResults}
 import gr.papadogiannis.stefanos.Main.CreateInfrastructure
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import gr.papadogiannis.stefanos.reducers.ReducersGroup
 import gr.papadogiannis.stefanos.mappers.MappersGroup
-import com.google.maps.model.DirectionsResult
 
 object Master {
   def props(): Props = Props(new Master)

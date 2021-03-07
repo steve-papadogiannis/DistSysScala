@@ -1,7 +1,5 @@
 package gr.papadogiannis.stefanos.models
 
-import com.google.maps.model.DirectionsResult
-
 sealed trait ReducerResult
 
 final case class RespondReduceResult(requestId: Long, value: Map[GeoPointPair, List[DirectionsResult]]) extends ReducerResult

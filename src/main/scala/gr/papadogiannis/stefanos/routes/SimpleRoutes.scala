@@ -1,13 +1,12 @@
 package gr.papadogiannis.stefanos.routes
 
+import gr.papadogiannis.stefanos.models.{DirectionsResult, Handle, Incoming}
 import gr.papadogiannis.stefanos.config.AugmentedSprayJsonSupport
 import akka.http.scaladsl.server.directives.MethodDirectives.post
 import akka.http.scaladsl.server.directives.PathDirectives.path
 import akka.http.scaladsl.marshalling.ToResponseMarshaller
-import gr.papadogiannis.stefanos.models.{Handle, Incoming}
 import gr.papadogiannis.stefanos.handlers.RequestHandler
 import gr.papadogiannis.stefanos.Main.{counter, system}
-import com.google.maps.model.DirectionsResult
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.util.Timeout

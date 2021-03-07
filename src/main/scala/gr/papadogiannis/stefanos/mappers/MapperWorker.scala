@@ -2,7 +2,6 @@ package gr.papadogiannis.stefanos.mappers
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import akka.actor.{Actor, ActorLogging, Props}
-import com.google.maps.model.DirectionsResult
 import gr.papadogiannis.stefanos.models._
 
 import scala.io.Source
@@ -21,7 +20,7 @@ class MapperWorker(mapperId: String) extends Actor with ActorLogging {
     case RequestTrackMapper(mapperName) =>
       sender() ! MapperRegistered(mapperName)
     case request@CalculateDirections(_, startLat, startLong, endLat, endLong) =>
-      val finalResult = map(new GeoPoint(startLat, startLong), new GeoPoint(endLat, endLong))
+      val finalResult = map(GeoPoint(startLat, startLong), GeoPoint(endLat, endLong))
       sender() ! RespondMapResults(request, finalResult)
   }
 
