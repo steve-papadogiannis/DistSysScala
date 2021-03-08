@@ -1,10 +1,11 @@
 package gr.papadogiannis.stefanos.masters
 
-import gr.papadogiannis.stefanos.models.{CalculateDirections, CalculateReduction, ConcreteMapperResult, ConcreteReducerResult, CreateInfrastructure, DirectionsResult, FinalResponse, GeoPoint, GeoPointPair, MapperResult, ReducerResult, RequestTrackMapper, RequestTrackReducer, RespondAllMapResults, RespondAllReduceResults}
+import gr.papadogiannis.stefanos.models.{DirectionsResult, GeoPoint, GeoPointPair}
 import gr.papadogiannis.stefanos.constants.ApplicationConstants.RECEIVED_MESSAGE_PATTERN
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import gr.papadogiannis.stefanos.reducers.ReducersGroup
 import gr.papadogiannis.stefanos.mappers.MappersGroup
+import gr.papadogiannis.stefanos.messages.{CalculateDirections, CalculateReduction, ConcreteMapperResult, ConcreteReducerResult, CreateInfrastructure, FinalResponse, MapperResult, ReducerResult, RequestTrackMapper, RequestTrackReducer, RespondAllMapResults, RespondAllReduceResults}
 
 object Master {
   def props(): Props = Props(new Master)
@@ -54,10 +55,12 @@ class Master extends Actor with ActorLogging {
   }
 
   private def getMerged(results: Map[String, ReducerResult]) = {
-    results.filter(x => x._2.isInstanceOf[ConcreteReducerResult])
-      .foldLeft[Map[GeoPointPair, List[DirectionsResult]]](Map.empty[GeoPointPair, List[DirectionsResult]])((x, y) =>
-        x + (y._1.asInstanceOf[GeoPointPair] ->
-          y._2.asInstanceOf[ConcreteReducerResult].valueOption.asInstanceOf[List[DirectionsResult]]))
+    results.values
+      .filter(value => value.isInstanceOf[ConcreteReducerResult])
+      .map(value => value.asInstanceOf[ConcreteReducerResult])
+      .foldLeft[Map[GeoPointPair, List[DirectionsResult]]](Map.empty[GeoPointPair, List[DirectionsResult]])((accumulator, concreteReducerResult) => {
+        accumulator ++ concreteReducerResult.valueOption
+      })
   }
 
   private def getMerged(results: Map[String, MapperResult]) = {

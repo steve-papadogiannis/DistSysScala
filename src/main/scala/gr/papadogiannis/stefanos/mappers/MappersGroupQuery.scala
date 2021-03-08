@@ -1,6 +1,6 @@
 package gr.papadogiannis.stefanos.mappers
 
-import gr.papadogiannis.stefanos.models.{CalculateDirections, CollectionTimeout, ConcreteMapperResult, MapperNotAvailable, MapperResult, MapperTimedOut, RespondAllMapResults, RespondMapResults}
+import gr.papadogiannis.stefanos.messages.{CalculateDirections, CollectionTimeout, ConcreteMapperResult, MapperNotAvailable, MapperResult, MapperTimedOut, RespondAllMapResults, RespondMapResults}
 import gr.papadogiannis.stefanos.constants.ApplicationConstants.RECEIVED_MESSAGE_PATTERN
 import akka.actor.{Actor, ActorLogging, ActorRef, Cancellable, Props, Terminated}
 

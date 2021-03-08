@@ -2,6 +2,7 @@ package gr.papadogiannis.stefanos.reducers
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Terminated}
 import gr.papadogiannis.stefanos.constants.ApplicationConstants.RECEIVED_MESSAGE_PATTERN
+import gr.papadogiannis.stefanos.messages.{CalculateReduction, ReducerRegistered, ReplyReducerList, RequestReducerList, RequestTrackReducer}
 import gr.papadogiannis.stefanos.models._
 
 import scala.concurrent.duration._

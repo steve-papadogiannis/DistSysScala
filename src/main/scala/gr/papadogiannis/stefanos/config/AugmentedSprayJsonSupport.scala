@@ -1,7 +1,8 @@
 package gr.papadogiannis.stefanos.config
 
-import gr.papadogiannis.stefanos.models.{DirectionsLeg, DirectionsResult, DirectionsRoute, DirectionsStep, Duration, EncodedPolyline, Incoming, LatLng, Outgoing}
+import gr.papadogiannis.stefanos.models.{DirectionsLeg, DirectionsResult, DirectionsRoute, DirectionsStep, Duration, EncodedPolyline, LatLng}
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
+import gr.papadogiannis.stefanos.messages.{Incoming, Outgoing}
 import spray.json.{DefaultJsonProtocol, RootJsonFormat}
 
 trait AugmentedSprayJsonSupport extends SprayJsonSupport with DefaultJsonProtocol {

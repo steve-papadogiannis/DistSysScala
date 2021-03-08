@@ -1,7 +1,7 @@
 package gr.papadogiannis.stefanos.servers
 
 import gr.papadogiannis.stefanos.constants.ApplicationConstants.RECEIVED_MESSAGE_PATTERN
-import gr.papadogiannis.stefanos.models.{CalculateDirections, CreateInfrastructure}
+import gr.papadogiannis.stefanos.messages.{CalculateDirections, CreateInfrastructure}
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import gr.papadogiannis.stefanos.masters.Master
 

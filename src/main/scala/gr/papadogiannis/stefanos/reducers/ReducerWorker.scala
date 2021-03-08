@@ -1,8 +1,9 @@
 package gr.papadogiannis.stefanos.reducers
 
-import gr.papadogiannis.stefanos.models.{CalculateReduction, DirectionsResult, GeoPointPair, ReducerRegistered, RequestTrackReducer, RespondReduceResult}
+import gr.papadogiannis.stefanos.models.{DirectionsResult, GeoPointPair}
 import gr.papadogiannis.stefanos.constants.ApplicationConstants.RECEIVED_MESSAGE_PATTERN
 import akka.actor.{Actor, ActorLogging, Props}
+import gr.papadogiannis.stefanos.messages.{CalculateReduction, ReducerRegistered, RequestTrackReducer, RespondReduceResult}
 
 object ReducerWorker {
   def props(reducerId: String): Props = Props(new ReducerWorker(reducerId))

@@ -1,4 +1,6 @@
-package gr.papadogiannis.stefanos.models
+package gr.papadogiannis.stefanos.messages
+
+import gr.papadogiannis.stefanos.models.{DirectionsResult, GeoPointPair}
 
 sealed trait ReducerResult
 

@@ -1,8 +1,8 @@
 package gr.papadogiannis.stefanos.mappers
 
-import gr.papadogiannis.stefanos.models.{CalculateDirections, MapperRegistered, ReplyMapperList, RequestMapperList, RequestTrackMapper}
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Terminated}
 import gr.papadogiannis.stefanos.constants.ApplicationConstants.RECEIVED_MESSAGE_PATTERN
+import gr.papadogiannis.stefanos.messages.{CalculateDirections, MapperRegistered, ReplyMapperList, RequestMapperList, RequestTrackMapper}
 
 import scala.concurrent.duration._
 
