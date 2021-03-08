@@ -1,9 +1,8 @@
 package gr.papadogiannis.stefanos.reducers
 
-import gr.papadogiannis.stefanos.messages.{CalculateReduction, CollectionTimeout, ConcreteReducerResult, ReducerNotAvailable, ReducerResult, ReducerTimedOut, RespondAllReduceResults, RespondReduceResult}
-import gr.papadogiannis.stefanos.constants.ApplicationConstants.RECEIVED_MESSAGE_PATTERN
 import akka.actor.{Actor, ActorLogging, ActorRef, Cancellable, Props, Terminated}
-import gr.papadogiannis.stefanos.models._
+import gr.papadogiannis.stefanos.constants.ApplicationConstants.RECEIVED_MESSAGE_PATTERN
+import gr.papadogiannis.stefanos.messages._
 
 import scala.concurrent.duration.FiniteDuration
 
