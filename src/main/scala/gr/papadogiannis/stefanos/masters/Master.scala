@@ -1,14 +1,15 @@
 package gr.papadogiannis.stefanos.masters
 
-import gr.papadogiannis.stefanos.constants.ApplicationConstants.RECEIVED_MESSAGE_PATTERN
-import gr.papadogiannis.stefanos.models.{DirectionsResult, GeoPoint, GeoPointPair}
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
-import gr.papadogiannis.stefanos.reducers.ReducersGroup
-import gr.papadogiannis.stefanos.mappers.MappersGroup
-import gr.papadogiannis.stefanos.caches.MemCache
-import gr.papadogiannis.stefanos.messages._
-import akka.util.Timeout
 import akka.pattern.ask
+import akka.util.Timeout
+import gr.papadogiannis.stefanos.caches.MemCache
+import gr.papadogiannis.stefanos.constants.ApplicationConstants.RECEIVED_MESSAGE_PATTERN
+import gr.papadogiannis.stefanos.integrations.GoogleDirectionsAPIActor
+import gr.papadogiannis.stefanos.mappers.MappersGroup
+import gr.papadogiannis.stefanos.messages._
+import gr.papadogiannis.stefanos.models.{DirectionsResult, GeoPoint, GeoPointPair}
+import gr.papadogiannis.stefanos.reducers.ReducersGroup
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.DurationInt
@@ -20,10 +21,12 @@ object Master {
 
 class Master extends Actor with ActorLogging {
 
+  val googleDirectionsAPIActorName = "google-directions-api-actor"
   val reducersGroupActorName = "reducers-group-actor"
   val mappersGroupActorName = "mappers-group-actor"
   val memCacheActorName = "mem-cache-actor"
 
+  var googleDirectionsAPIActor: ActorRef = _
   var reducersGroupActor: ActorRef = _
   var mappersGroupActor: ActorRef = _
   var memCacheActor: ActorRef = _
@@ -37,6 +40,8 @@ class Master extends Actor with ActorLogging {
       log.info(RECEIVED_MESSAGE_PATTERN.format(CreateInfrastructure))
       log.info("Creating mem cache actor.")
       memCacheActor = context.actorOf(MemCache.props(), memCacheActorName)
+      log.info("Creating google directions API actor.")
+      googleDirectionsAPIActor = context.actorOf(GoogleDirectionsAPIActor.props(), googleDirectionsAPIActorName)
       log.info("Creating reducers group actor.")
       reducersGroupActor = context.actorOf(ReducersGroup.props(), reducersGroupActorName)
       reducersGroupActor ! RequestTrackReducer("moscow")
@@ -72,13 +77,21 @@ class Master extends Actor with ActorLogging {
     case message@RespondAllReduceResults(request, results) =>
       log.info(RECEIVED_MESSAGE_PATTERN.format(message.toString))
       val merged = getMerged(results)
+      val geoPointPair = merged.head._1
       val valueOption = calculateEuclideanMin(merged)
       valueOption match {
         case Some(value) =>
-          memCacheActor ! UpdateCache(merged.head._1, value)
+          memCacheActor ! UpdateCache(geoPointPair, value)
           requester ! FinalResponse(request, valueOption)
         case None =>
-          // TODO: add google api call
+          implicit val askTimeout: Timeout = Timeout(10.seconds)
+          val future = googleDirectionsAPIActor ? GetDirections(geoPointPair)
+          future.onComplete {
+            case Success(_) =>
+
+            case Failure(exception) =>
+              log.error(exception.toString)
+          }
       }
   }
 
