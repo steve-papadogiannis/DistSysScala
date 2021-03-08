@@ -1,11 +1,11 @@
 package gr.papadogiannis.stefanos.masters
 
-import gr.papadogiannis.stefanos.models.{DirectionsResult, GeoPoint, GeoPointPair}
+import gr.papadogiannis.stefanos.messages.{CalculateDirections, CalculateReduction, ConcreteMapperResult, ConcreteReducerResult, CreateInfrastructure, FinalResponse, MapperResult, ReducerResult, RequestTrackMapper, RequestTrackReducer, RespondAllMapResults, RespondAllReduceResults}
 import gr.papadogiannis.stefanos.constants.ApplicationConstants.RECEIVED_MESSAGE_PATTERN
+import gr.papadogiannis.stefanos.models.{DirectionsResult, GeoPoint, GeoPointPair}
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import gr.papadogiannis.stefanos.reducers.ReducersGroup
 import gr.papadogiannis.stefanos.mappers.MappersGroup
-import gr.papadogiannis.stefanos.messages.{CalculateDirections, CalculateReduction, ConcreteMapperResult, ConcreteReducerResult, CreateInfrastructure, FinalResponse, MapperResult, ReducerResult, RequestTrackMapper, RequestTrackReducer, RespondAllMapResults, RespondAllReduceResults}
 
 object Master {
   def props(): Props = Props(new Master)
@@ -74,8 +74,8 @@ class Master extends Actor with ActorLogging {
     val startLongitude: Double = 23.0
     val endLatitude: Double = 29.0
     val endLongitude: Double = 43.0
-    val startReferencePoint = new GeoPoint(startLatitude, startLongitude)
-    val endReferencePoint = new GeoPoint(endLatitude, endLongitude)
+    val startReferencePoint = GeoPoint(startLatitude, startLongitude)
+    val endReferencePoint = GeoPoint(endLatitude, endLongitude)
     result.reduceLeftOption((previousMin, pair) => {
       val sumPreviousPair = getEuclideanDistance(startReferencePoint, previousMin) + getEuclideanDistance(endReferencePoint, previousMin)
       val sumPair = getEuclideanDistance(startReferencePoint, pair) + getEuclideanDistance(endReferencePoint, pair)

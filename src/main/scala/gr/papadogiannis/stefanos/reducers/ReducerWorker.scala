@@ -1,9 +1,9 @@
 package gr.papadogiannis.stefanos.reducers
 
-import gr.papadogiannis.stefanos.models.{DirectionsResult, GeoPointPair}
-import gr.papadogiannis.stefanos.constants.ApplicationConstants.RECEIVED_MESSAGE_PATTERN
-import akka.actor.{Actor, ActorLogging, Props}
 import gr.papadogiannis.stefanos.messages.{CalculateReduction, ReducerRegistered, RequestTrackReducer, RespondReduceResult}
+import gr.papadogiannis.stefanos.constants.ApplicationConstants.RECEIVED_MESSAGE_PATTERN
+import gr.papadogiannis.stefanos.models.{DirectionsResult, GeoPointPair}
+import akka.actor.{Actor, ActorLogging, Props}
 
 object ReducerWorker {
   def props(reducerId: String): Props = Props(new ReducerWorker(reducerId))
@@ -35,8 +35,7 @@ class ReducerWorker(name: String) extends Actor with ActorLogging {
           (accumulator.getOrElse(geoPointPair, List.empty[DirectionsResult]) :: list).asInstanceOf[List[DirectionsResult]])
       else
         accumulator + (geoPointPair -> list)
-    }
-    )
+    })
   }
 
 }

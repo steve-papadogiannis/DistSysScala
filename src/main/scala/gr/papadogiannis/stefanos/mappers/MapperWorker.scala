@@ -1,12 +1,12 @@
 package gr.papadogiannis.stefanos.mappers
 
+import gr.papadogiannis.stefanos.messages.{CalculateDirections, MapperRegistered, RequestTrackMapper, RespondMapResults}
 import org.mongodb.scala.{ConnectionString, MongoClient, MongoClientSettings, MongoDatabase, Observable}
+import gr.papadogiannis.stefanos.constants.ApplicationConstants.RECEIVED_MESSAGE_PATTERN
 import org.bson.codecs.configuration.CodecRegistries.{fromProviders, fromRegistries}
 import org.mongodb.scala.MongoClient.DEFAULT_CODEC_REGISTRY
 import org.bson.codecs.configuration.CodecRegistry
 import akka.actor.{Actor, ActorLogging, Props}
-import gr.papadogiannis.stefanos.constants.ApplicationConstants.RECEIVED_MESSAGE_PATTERN
-import gr.papadogiannis.stefanos.messages.{CalculateDirections, MapperRegistered, RequestTrackMapper, RespondMapResults}
 import org.mongodb.scala.bson.codecs.Macros._
 import gr.papadogiannis.stefanos.models._
 
