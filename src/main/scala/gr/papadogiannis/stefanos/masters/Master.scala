@@ -1,11 +1,18 @@
 package gr.papadogiannis.stefanos.masters
 
-import gr.papadogiannis.stefanos.messages.{CalculateDirections, CalculateReduction, ConcreteMapperResult, ConcreteReducerResult, CreateInfrastructure, FinalResponse, MapperResult, ReducerResult, RequestTrackMapper, RequestTrackReducer, RespondAllMapResults, RespondAllReduceResults}
 import gr.papadogiannis.stefanos.constants.ApplicationConstants.RECEIVED_MESSAGE_PATTERN
 import gr.papadogiannis.stefanos.models.{DirectionsResult, GeoPoint, GeoPointPair}
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import gr.papadogiannis.stefanos.reducers.ReducersGroup
 import gr.papadogiannis.stefanos.mappers.MappersGroup
+import gr.papadogiannis.stefanos.caches.MemCache
+import gr.papadogiannis.stefanos.messages._
+import akka.util.Timeout
+import akka.pattern.ask
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.DurationInt
+import scala.util.{Failure, Success}
 
 object Master {
   def props(): Props = Props(new Master)
@@ -15,20 +22,21 @@ class Master extends Actor with ActorLogging {
 
   val reducersGroupActorName = "reducers-group-actor"
   val mappersGroupActorName = "mappers-group-actor"
+  val memCacheActorName = "mem-cache-actor"
 
   var reducersGroupActor: ActorRef = _
-
   var mappersGroupActor: ActorRef = _
-
+  var memCacheActor: ActorRef = _
   var requester: ActorRef = _
 
   override def preStart(): Unit = log.info("Master started")
 
   override def postStop(): Unit = log.info("Master stopped")
-
   override def receive: Receive = {
     case CreateInfrastructure =>
       log.info(RECEIVED_MESSAGE_PATTERN.format(CreateInfrastructure))
+      log.info("Creating mem cache actor.")
+      memCacheActor = context.actorOf(MemCache.props(), memCacheActorName)
       log.info("Creating reducers group actor.")
       reducersGroupActor = context.actorOf(ReducersGroup.props(), reducersGroupActorName)
       reducersGroupActor ! RequestTrackReducer("moscow")
@@ -39,10 +47,24 @@ class Master extends Actor with ActorLogging {
       mappersGroupActor ! RequestTrackMapper("sao-paolo")
       mappersGroupActor ! RequestTrackMapper("athens")
       mappersGroupActor ! RequestTrackMapper("jamaica")
-    case request@CalculateDirections(_, _, _, _, _) =>
+    case request@CalculateDirections(requestId, startLat, startLong, endLat, endLong) =>
       log.info(RECEIVED_MESSAGE_PATTERN.format(request.toString))
       requester = sender()
-      mappersGroupActor forward request
+      implicit val askTimeout: Timeout = Timeout(10.seconds)
+      val future = memCacheActor ? CacheCheck(GeoPointPair(GeoPoint(startLat, startLong), GeoPoint(endLat, endLong)))
+      future.onComplete {
+        case Success(directionsResultOption) =>
+          directionsResultOption match {
+            case Some(directionsResult@DirectionsResult(_)) =>
+              requester ! FinalResponse(CalculateReduction(requestId, List.empty), Some(directionsResult))
+            case None =>
+              log.info("MemCache check missed, sending to mappers group")
+              mappersGroupActor forward request
+          }
+        case Failure(exception) =>
+          log.error(exception.toString)
+          mappersGroupActor forward request
+      }
     case message@RespondAllMapResults(request, results) =>
       log.info(RECEIVED_MESSAGE_PATTERN.format(message.toString))
       val merged = getMerged(results)
@@ -50,8 +72,14 @@ class Master extends Actor with ActorLogging {
     case message@RespondAllReduceResults(request, results) =>
       log.info(RECEIVED_MESSAGE_PATTERN.format(message.toString))
       val merged = getMerged(results)
-      val value = calculateEuclideanMin(merged)
-      requester ! FinalResponse(request, value)
+      val valueOption = calculateEuclideanMin(merged)
+      valueOption match {
+        case Some(value) =>
+          memCacheActor ! UpdateCache(merged.head._1, value)
+          requester ! FinalResponse(request, valueOption)
+        case None =>
+          // TODO: add google api call
+      }
   }
 
   private def getMerged(results: Map[String, ReducerResult]) = {
