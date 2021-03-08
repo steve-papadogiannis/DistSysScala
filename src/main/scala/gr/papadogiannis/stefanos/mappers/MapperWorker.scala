@@ -1,13 +1,8 @@
 package gr.papadogiannis.stefanos.mappers
 
-import gr.papadogiannis.stefanos.messages.{CalculateDirections, MapperRegistered, RequestTrackMapper, RespondMapResults}
-import org.mongodb.scala.{ConnectionString, MongoClient, MongoClientSettings, MongoDatabase, Observable}
+import gr.papadogiannis.stefanos.messages.{CalculateDirections, DBResult, FindAll, MapperRegistered, RequestTrackMapper, RespondMapResults}
 import gr.papadogiannis.stefanos.constants.ApplicationConstants.RECEIVED_MESSAGE_PATTERN
-import org.bson.codecs.configuration.CodecRegistries.{fromProviders, fromRegistries}
-import org.mongodb.scala.MongoClient.DEFAULT_CODEC_REGISTRY
-import org.bson.codecs.configuration.CodecRegistry
-import akka.actor.{Actor, ActorLogging, Props}
-import org.mongodb.scala.bson.codecs.Macros._
+import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import gr.papadogiannis.stefanos.models._
 
 object MapperWorker {
@@ -20,20 +15,27 @@ class MapperWorker(mapperId: String) extends Actor with ActorLogging {
 
   override def postStop(): Unit = log.info("Mapper actor {} stopped", mapperId)
 
+  var requestIdToRequester = Map.empty[Long, ActorRef]
+
   override def receive: Receive = {
     case message@RequestTrackMapper(mapperName) =>
       log.info(RECEIVED_MESSAGE_PATTERN.format(message.toString))
       sender() ! MapperRegistered(mapperName)
-    case message@CalculateDirections(_, geoPointPair) =>
+    case message@CalculateDirections(requestId, _) =>
       log.info(RECEIVED_MESSAGE_PATTERN.format(message.toString))
-      val senderActorRef = sender()
-      map(geoPointPair)
-        .subscribe(finalResult => {
-          senderActorRef ! RespondMapResults(message, finalResult.toList)
-        }, throwable => {
-          log.error(throwable.toString)
-          log.error(throwable.getStackTrace.mkString("\n"))
-        })
+      requestIdToRequester = requestIdToRequester + (requestId -> sender())
+      mongoActor ! FindAll(message)
+    case DBResult(calculateDirections, directionsResultWrappers) =>
+      val pairToResults = map(calculateDirections.geoPointPair, directionsResultWrappers)
+      processResponse(calculateDirections, pairToResults.toList)
+  }
+
+  private def processResponse(calculateDirections: CalculateDirections,
+                              directionsResults: List[Map[GeoPointPair, DirectionsResult]]): Unit = {
+    val actorRefOption = requestIdToRequester.get(calculateDirections.requestId)
+    actorRefOption.map(actorRef => actorRef ! RespondMapResults(calculateDirections, directionsResults))
+      .getOrElse(log.warning(s"The actorRef for ${calculateDirections.requestId} was not found"))
+    requestIdToRequester = requestIdToRequester - calculateDirections.requestId
   }
 
   def calculateHash(str: String): Long = {
@@ -70,15 +72,9 @@ class MapperWorker(mapperId: String) extends Actor with ActorLogging {
     decimalFormat.format(number).toDouble
   }
 
-  def map(geoPointPair: GeoPointPair): Observable[Seq[Map[GeoPointPair, DirectionsResult]]] = {
-    val codecRegistries = getCodecRegistries
-    val mongoClientSettings = getMongoClientSettings(codecRegistries)
-    val mongoClient = getMongoClient(mongoClientSettings)
-    val database = getMongoDatabase(mongoClient)
-    val collection = getMongoCollection(database)
+  def map(geoPointPair: GeoPointPair, directionsResultWrappers: List[DirectionsResultWrapper]): Seq[Map[GeoPointPair, DirectionsResult]] = {
     val mapperHash: Long = getMapperHash
-    collection
-      .find[DirectionsResultWrapper]()
+    directionsResultWrappers
       .filter(directionsResultWrapper => {
         val geoPointsHashMod4: Long = getGeoPointsHash(directionsResultWrapper)
         mapperHash == geoPointsHashMod4
@@ -113,7 +109,6 @@ class MapperWorker(mapperId: String) extends Actor with ActorLogging {
         map
       })
       .filter(map => map.nonEmpty)
-      .collect()
   }
 
   private def checkIfNear(firstPoint: Double, secondPoint: Double) = {
@@ -134,46 +129,6 @@ class MapperWorker(mapperId: String) extends Actor with ActorLogging {
     val mapperHash = calculateHash(mapperId)
     val mapperHashModFour = mapperHash % 4
     if (mapperHashModFour < 0) -mapperHashModFour else mapperHashModFour
-  }
-
-  private def getMongoCollection(database: MongoDatabase) = {
-    database.getCollection("directions")
-  }
-
-  private def getMongoDatabase(mongoClient: MongoClient) = {
-    mongoClient.getDatabase("dist-sys")
-  }
-
-  private def getMongoClient(mongoClientSettings: MongoClientSettings) = {
-    MongoClient(mongoClientSettings)
-  }
-
-  private def getMongoClientSettings(codecRegistries: CodecRegistry) = {
-    MongoClientSettings
-      .builder()
-      .applyConnectionString(ConnectionString(getMongoConnectionString))
-      .codecRegistry(codecRegistries)
-      .build()
-  }
-
-  private def getMongoConnectionString = {
-    "mongodb://root:example@localhost:27017"
-  }
-
-  private def getCodecRegistries = {
-    fromRegistries(
-      fromProviders(
-        classOf[DirectionsResultWrapper],
-        classOf[GeoPoint],
-        classOf[DirectionsResult],
-        classOf[DirectionsRoute],
-        classOf[DirectionsLeg],
-        classOf[Duration],
-        classOf[DirectionsStep],
-        classOf[LatLng],
-        classOf[EncodedPolyline]
-      ),
-      DEFAULT_CODEC_REGISTRY)
   }
 
 }

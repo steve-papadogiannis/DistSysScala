@@ -89,7 +89,7 @@ class Master extends Actor with ActorLogging {
       processResponse(calculateReduction, maybeResult)
   }
 
-  private def processResponse(calculateReduction: CalculateReduction, valueOption: Option[DirectionsResult]) = {
+  private def processResponse(calculateReduction: CalculateReduction, valueOption: Option[DirectionsResult]): Unit = {
     val actorRefOption = requestIdToRequester.get(calculateReduction.request.requestId)
     actorRefOption.map(actorRef => actorRef ! FinalResponse(calculateReduction, valueOption))
       .getOrElse(log.warning(s"The actorRef for ${calculateReduction.request.requestId} was not found"))
