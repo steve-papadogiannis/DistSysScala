@@ -52,16 +52,16 @@ class Master extends Actor with ActorLogging {
       mappersGroupActor ! RequestTrackMapper("sao-paolo")
       mappersGroupActor ! RequestTrackMapper("athens")
       mappersGroupActor ! RequestTrackMapper("jamaica")
-    case request@CalculateDirections(requestId, startLat, startLong, endLat, endLong) =>
+    case request@CalculateDirections(requestId, geoPointPair) =>
       log.info(RECEIVED_MESSAGE_PATTERN.format(request.toString))
       requester = sender()
       implicit val askTimeout: Timeout = Timeout(10.seconds)
-      val future = memCacheActor ? CacheCheck(GeoPointPair(GeoPoint(startLat, startLong), GeoPoint(endLat, endLong)))
+      val future = memCacheActor ? CacheCheck(geoPointPair)
       future.onComplete {
         case Success(directionsResultOption) =>
           directionsResultOption match {
             case Some(directionsResult@DirectionsResult(_)) =>
-              requester ! FinalResponse(CalculateReduction(requestId, List.empty), Some(directionsResult))
+              requester ! FinalResponse(CalculateReduction(request, List.empty), Some(directionsResult))
             case None =>
               log.info("MemCache check missed, sending to mappers group")
               mappersGroupActor forward request
@@ -73,16 +73,16 @@ class Master extends Actor with ActorLogging {
     case message@RespondAllMapResults(request, results) =>
       log.info(RECEIVED_MESSAGE_PATTERN.format(message.toString))
       val merged = getMerged(results)
-      reducersGroupActor ! CalculateReduction(request.requestId, merged)
-    case message@RespondAllReduceResults(request, results) =>
+      reducersGroupActor ! CalculateReduction(request, merged)
+    case message@RespondAllReduceResults(calculateReduction, results) =>
       log.info(RECEIVED_MESSAGE_PATTERN.format(message.toString))
       val merged = getMerged(results)
-      val geoPointPair = merged.head._1
       val valueOption = calculateEuclideanMin(merged)
+      val geoPointPair = calculateReduction.request.geoPointPair
       valueOption match {
         case Some(value) =>
           memCacheActor ! UpdateCache(geoPointPair, value)
-          requester ! FinalResponse(request, valueOption)
+          requester ! FinalResponse(calculateReduction, valueOption)
         case None =>
           implicit val askTimeout: Timeout = Timeout(10.seconds)
           val future = googleDirectionsAPIActor ? GetDirections(geoPointPair)

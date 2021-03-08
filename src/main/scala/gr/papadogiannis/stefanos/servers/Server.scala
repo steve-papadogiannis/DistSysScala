@@ -24,7 +24,7 @@ class Server extends Actor with ActorLogging {
       log.info(RECEIVED_MESSAGE_PATTERN.format(CreateInfrastructure))
       master = context.actorOf(Master.props(), masterName)
       master ! CreateInfrastructure
-    case request@CalculateDirections(_, _, _, _, _) =>
+    case request@CalculateDirections(_, _) =>
       log.info(RECEIVED_MESSAGE_PATTERN.format(request.toString))
       master forward request
   }

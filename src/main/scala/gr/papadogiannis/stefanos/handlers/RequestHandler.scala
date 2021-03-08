@@ -21,11 +21,11 @@ class RequestHandler() extends Actor with ActorLogging {
   override def postStop(): Unit = log.info("RequestHandler actor stopped")
 
   override def receive: Receive = {
-    case message@Handle(requestId, startLat, startLong, endLat, endLong, f) =>
+    case message@Handle(requestId, geoPointPair, f) =>
       log.info(RECEIVED_MESSAGE_PATTERN.format(message.toString))
       requester = sender()
       complete = f
-      supervisor ! CalculateDirections(requestId, startLat, startLong, endLat, endLong)
+      supervisor ! CalculateDirections(requestId, geoPointPair)
     case message@FinalResponse(_, results) =>
       log.info(RECEIVED_MESSAGE_PATTERN.format(message.toString))
       complete(results.orNull)

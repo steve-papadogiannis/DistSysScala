@@ -24,7 +24,7 @@ class Supervisor extends Actor with ActorLogging {
       log.info(RECEIVED_MESSAGE_PATTERN.format(CreateInfrastructure))
       server = context.actorOf(Server.props(), serverName)
       server ! CreateInfrastructure
-    case request@CalculateDirections(_, _, _, _, _) =>
+    case request@CalculateDirections(_, _) =>
       log.info(RECEIVED_MESSAGE_PATTERN.format(request.toString))
       server forward request
   }

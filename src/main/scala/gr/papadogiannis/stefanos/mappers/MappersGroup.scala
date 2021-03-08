@@ -40,7 +40,7 @@ class MappersGroup(masterActorRef: ActorRef) extends Actor with ActorLogging {
     case message@RequestMapperList(requestId) =>
       log.info(RECEIVED_MESSAGE_PATTERN.format(message.toString))
       sender() ! ReplyMapperList(requestId, mapperNameToMapperActorRef.keySet)
-    case request@CalculateDirections(requestId, _, _, _, _) =>
+    case request@CalculateDirections(requestId, _) =>
       log.info(RECEIVED_MESSAGE_PATTERN.format(request.toString))
       context.actorOf(MappersGroupQuery.props(mapperActorRefToMapperName, request, masterActorRef, 5.minutes), s"mappers-group-query-$requestId")
     case message@MapperRegistered(mapperName) =>

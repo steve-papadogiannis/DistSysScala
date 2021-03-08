@@ -2,4 +2,4 @@ package gr.papadogiannis.stefanos.messages
 
 import gr.papadogiannis.stefanos.models.{DirectionsResult, GeoPointPair}
 
-final case class CalculateReduction(requestId: Long, merged: List[Map[GeoPointPair, DirectionsResult]])
+final case class CalculateReduction(request: CalculateDirections, merged: List[Map[GeoPointPair, DirectionsResult]])

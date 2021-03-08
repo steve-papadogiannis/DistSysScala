@@ -24,10 +24,10 @@ class MapperWorker(mapperId: String) extends Actor with ActorLogging {
     case message@RequestTrackMapper(mapperName) =>
       log.info(RECEIVED_MESSAGE_PATTERN.format(message.toString))
       sender() ! MapperRegistered(mapperName)
-    case message@CalculateDirections(_, startLat, startLong, endLat, endLong) =>
+    case message@CalculateDirections(_, geoPointPair) =>
       log.info(RECEIVED_MESSAGE_PATTERN.format(message.toString))
       val senderActorRef = sender()
-      map(GeoPoint(startLat, startLong), GeoPoint(endLat, endLong))
+      map(geoPointPair)
         .subscribe(finalResult => {
           senderActorRef ! RespondMapResults(message, finalResult.toList)
         }, throwable => {
@@ -70,7 +70,7 @@ class MapperWorker(mapperId: String) extends Actor with ActorLogging {
     decimalFormat.format(number).toDouble
   }
 
-  def map(startGeoPoint: GeoPoint, endGeoPoint: GeoPoint): Observable[Seq[Map[GeoPointPair, DirectionsResult]]] = {
+  def map(geoPointPair: GeoPointPair): Observable[Seq[Map[GeoPointPair, DirectionsResult]]] = {
     val codecRegistries = getCodecRegistries
     val mongoClientSettings = getMongoClientSettings(codecRegistries)
     val mongoClient = getMongoClient(mongoClientSettings)
@@ -85,10 +85,18 @@ class MapperWorker(mapperId: String) extends Actor with ActorLogging {
       })
       .map(directionsResultWrapper => {
         val map = Map.empty[GeoPointPair, DirectionsResult]
-        val isStartLatitudeNearIssuedStartLatitude = checkIfNear(startGeoPoint.latitude, directionsResultWrapper.startPoint.latitude)
-        val isStartLongitudeNearIssuedStartLongitude = checkIfNear(startGeoPoint.longitude, directionsResultWrapper.startPoint.longitude)
-        val isEndLatitudeNearIssuedEndLatitude = checkIfNear(endGeoPoint.latitude, directionsResultWrapper.endPoint.latitude)
-        val isEndLongitudeNearIssuedEndLongitude = checkIfNear(endGeoPoint.longitude, directionsResultWrapper.endPoint.longitude)
+        val isStartLatitudeNearIssuedStartLatitude = checkIfNear(
+          geoPointPair.startGeoPoint.latitude,
+          directionsResultWrapper.startPoint.latitude)
+        val isStartLongitudeNearIssuedStartLongitude = checkIfNear(
+          geoPointPair.startGeoPoint.longitude,
+          directionsResultWrapper.startPoint.longitude)
+        val isEndLatitudeNearIssuedEndLatitude = checkIfNear(
+          geoPointPair.endGeoPoint.latitude,
+          directionsResultWrapper.endPoint.latitude)
+        val isEndLongitudeNearIssuedEndLongitude = checkIfNear(
+          geoPointPair.endGeoPoint.longitude,
+          directionsResultWrapper.endPoint.longitude)
         if (isStartLatitudeNearIssuedStartLatitude &&
           isStartLongitudeNearIssuedStartLongitude &&
           isEndLatitudeNearIssuedEndLatitude &&

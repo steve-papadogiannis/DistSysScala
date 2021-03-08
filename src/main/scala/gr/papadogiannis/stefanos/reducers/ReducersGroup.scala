@@ -1,9 +1,8 @@
 package gr.papadogiannis.stefanos.reducers
 
-import gr.papadogiannis.stefanos.messages.{CalculateReduction, ReducerRegistered, ReplyReducerList, RequestReducerList, RequestTrackReducer}
-import gr.papadogiannis.stefanos.constants.ApplicationConstants.RECEIVED_MESSAGE_PATTERN
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Terminated}
-import gr.papadogiannis.stefanos.models._
+import gr.papadogiannis.stefanos.constants.ApplicationConstants.RECEIVED_MESSAGE_PATTERN
+import gr.papadogiannis.stefanos.messages._
 
 import scala.concurrent.duration._
 
@@ -41,9 +40,9 @@ class ReducersGroup extends Actor with ActorLogging {
     case message@RequestReducerList(requestId) =>
       log.info(RECEIVED_MESSAGE_PATTERN.format(message.toString))
       sender() ! ReplyReducerList(requestId, reducerNameToReducerActorRef.keySet)
-    case request@CalculateReduction(requestId, _) =>
+    case request@CalculateReduction(calculateDirections, _) =>
       log.info(RECEIVED_MESSAGE_PATTERN.format(request.toString))
-      context.actorOf(ReducersGroupQuery.props(reducerActorRefToReducerName, request, sender(), 5.minutes), s"reducers-group-query-$requestId")
+      context.actorOf(ReducersGroupQuery.props(reducerActorRefToReducerName, request, sender(), 5.minutes), s"reducers-group-query-${calculateDirections.requestId}")
     case message@ReducerRegistered(reducerName) =>
       log.info(RECEIVED_MESSAGE_PATTERN.format(message.toString))
       log.info("Registering Reducer Actor [{}]", reducerName)

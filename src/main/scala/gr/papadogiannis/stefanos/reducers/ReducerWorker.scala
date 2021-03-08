@@ -19,10 +19,10 @@ class ReducerWorker(name: String) extends Actor with ActorLogging {
     case message@RequestTrackReducer(reducerName) =>
       log.info(RECEIVED_MESSAGE_PATTERN.format(message.toString))
       sender() ! ReducerRegistered(reducerName)
-    case message@CalculateReduction(requestId, merged) =>
-      log.info(RECEIVED_MESSAGE_PATTERN.format(message.toString))
+    case request@CalculateReduction(requestId, merged) =>
+      log.info(RECEIVED_MESSAGE_PATTERN.format(request.toString))
       val finalResult = reduce(merged)
-      sender() ! RespondReduceResult(requestId, finalResult)
+      sender() ! RespondReduceResult(request, finalResult)
   }
 
   def reduce(incoming: List[Map[GeoPointPair, DirectionsResult]]): Map[GeoPointPair, List[DirectionsResult]] = {

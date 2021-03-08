@@ -4,7 +4,7 @@ import gr.papadogiannis.stefanos.models.{DirectionsResult, GeoPointPair}
 
 sealed trait ReducerResult
 
-final case class RespondReduceResult(requestId: Long, value: Map[GeoPointPair, List[DirectionsResult]]) extends ReducerResult
+final case class RespondReduceResult(request: CalculateReduction, value: Map[GeoPointPair, List[DirectionsResult]]) extends ReducerResult
 
 final case class ConcreteReducerResult(valueOption: Map[GeoPointPair, List[DirectionsResult]]) extends ReducerResult
 
