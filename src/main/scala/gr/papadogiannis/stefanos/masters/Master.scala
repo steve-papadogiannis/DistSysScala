@@ -87,8 +87,14 @@ class Master extends Actor with ActorLogging {
           implicit val askTimeout: Timeout = Timeout(10.seconds)
           val future = googleDirectionsAPIActor ? GetDirections(geoPointPair)
           future.onComplete {
-            case Success(_) =>
+            case Success(maybeResult: Option[DirectionsResult]) =>
+              maybeResult match {
+                case Some(directionsResult@DirectionsResult(_)) =>
+                  memCacheActor ! UpdateCache(geoPointPair, directionsResult)
+                case None =>
 
+              }
+              requester ! FinalResponse(calculateReduction, maybeResult)
             case Failure(exception) =>
               log.error(exception.toString)
           }
