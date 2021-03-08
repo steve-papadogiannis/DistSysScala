@@ -1,8 +1,6 @@
 package gr.papadogiannis.stefanos.masters
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
-import akka.pattern.ask
-import akka.util.Timeout
 import gr.papadogiannis.stefanos.caches.MemCache
 import gr.papadogiannis.stefanos.constants.ApplicationConstants.RECEIVED_MESSAGE_PATTERN
 import gr.papadogiannis.stefanos.integrations.GoogleDirectionsAPIActor
@@ -10,10 +8,6 @@ import gr.papadogiannis.stefanos.mappers.MappersGroup
 import gr.papadogiannis.stefanos.messages._
 import gr.papadogiannis.stefanos.models.{DirectionsResult, GeoPoint, GeoPointPair}
 import gr.papadogiannis.stefanos.reducers.ReducersGroup
-
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration.DurationInt
-import scala.util.{Failure, Success}
 
 object Master {
   def props(): Props = Props(new Master)
@@ -30,7 +24,8 @@ class Master extends Actor with ActorLogging {
   var reducersGroupActor: ActorRef = _
   var mappersGroupActor: ActorRef = _
   var memCacheActor: ActorRef = _
-  var requester: ActorRef = _
+
+  var requestIdToRequester = Map.empty[Long, ActorRef]
 
   override def preStart(): Unit = log.info("Master started")
 
@@ -53,24 +48,21 @@ class Master extends Actor with ActorLogging {
       mappersGroupActor ! RequestTrackMapper("sao-paolo")
       mappersGroupActor ! RequestTrackMapper("athens")
       mappersGroupActor ! RequestTrackMapper("jamaica")
-    case request@CalculateDirections(requestId, geoPointPair) =>
+    case request@CalculateDirections(requestId, _) =>
       log.info(RECEIVED_MESSAGE_PATTERN.format(request.toString))
-      requester = sender()
-      implicit val askTimeout: Timeout = Timeout(10.seconds)
-      val future = memCacheActor ? CacheCheck(geoPointPair)
-      future.onComplete {
-        case Success(directionsResultOption) =>
-          directionsResultOption match {
-            case Some(directionsResult@DirectionsResult(_)) =>
-              requester ! FinalResponse(CalculateReduction(request, List.empty), Some(directionsResult))
-            case None =>
-              log.info("MemCache check missed, sending to mappers group")
-              mappersGroupActor forward request
-          }
-        case Failure(exception) =>
-          log.error(exception.toString)
-          mappersGroupActor forward request
-      }
+      requestIdToRequester = requestIdToRequester + (requestId -> sender())
+      memCacheActor ! CacheCheck(request)
+    case request@CacheHit(calculateDirections, directionsResult) =>
+      log.info(RECEIVED_MESSAGE_PATTERN.format(request.toString))
+      val actorRefOption = requestIdToRequester.get(calculateDirections.requestId)
+      actorRefOption.map(actorRef => actorRef ! FinalResponse(
+        CalculateReduction(calculateDirections, List.empty),
+        Some(directionsResult)))
+        .getOrElse(log.warning(s"The actorRef for ${calculateDirections.requestId} was not found"))
+      requestIdToRequester = requestIdToRequester - calculateDirections.requestId
+    case request@CacheMiss(calculateDirections) =>
+      log.info(RECEIVED_MESSAGE_PATTERN.format(request.toString))
+      mappersGroupActor forward calculateDirections
     case message@RespondAllMapResults(request, results) =>
       log.info(RECEIVED_MESSAGE_PATTERN.format(message.toString))
       val merged = getMerged(results)
@@ -83,22 +75,25 @@ class Master extends Actor with ActorLogging {
       valueOption match {
         case Some(value) =>
           memCacheActor ! UpdateCache(geoPointPair, value)
-          requester ! FinalResponse(calculateReduction, valueOption)
+          processResponse(calculateReduction, valueOption)
         case None =>
-          implicit val askTimeout: Timeout = Timeout(10.seconds)
-          val future = googleDirectionsAPIActor ? GetDirections(geoPointPair)
-          future.onComplete {
-            case Success(maybeResult: Option[DirectionsResult]) =>
-              maybeResult match {
-                case Some(directionsResult@DirectionsResult(_)) =>
-                  memCacheActor ! UpdateCache(geoPointPair, directionsResult)
-                case None =>
-              }
-              requester ! FinalResponse(calculateReduction, maybeResult)
-            case Failure(exception) =>
-              log.error(exception.toString)
-          }
+          googleDirectionsAPIActor ! GetDirections(calculateReduction)
       }
+    case request@GoogleAPIResponse(calculateReduction, maybeResult) =>
+      log.info(RECEIVED_MESSAGE_PATTERN.format(request.toString))
+      maybeResult match {
+        case Some(directionsResult@DirectionsResult(_)) =>
+          memCacheActor ! UpdateCache(calculateReduction.request.geoPointPair, directionsResult)
+        case None =>
+      }
+      processResponse(calculateReduction, maybeResult)
+  }
+
+  private def processResponse(calculateReduction: CalculateReduction, valueOption: Option[DirectionsResult]) = {
+    val actorRefOption = requestIdToRequester.get(calculateReduction.request.requestId)
+    actorRefOption.map(actorRef => actorRef ! FinalResponse(calculateReduction, valueOption))
+      .getOrElse(log.warning(s"The actorRef for ${calculateReduction.request.requestId} was not found"))
+    requestIdToRequester = requestIdToRequester - calculateReduction.request.requestId
   }
 
   private def getMerged(results: Map[String, ReducerResult]) = {
