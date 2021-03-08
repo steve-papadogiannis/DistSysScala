@@ -28,7 +28,7 @@ class RequestHandler() extends Actor with ActorLogging {
       supervisor ! CalculateDirections(requestId, geoPointPair)
     case message@FinalResponse(_, results) =>
       log.info(RECEIVED_MESSAGE_PATTERN.format(message.toString))
-      complete(results.orNull)
+      results.map(complete)
   }
 
 }

@@ -35,6 +35,7 @@ class Master extends Actor with ActorLogging {
   override def preStart(): Unit = log.info("Master started")
 
   override def postStop(): Unit = log.info("Master stopped")
+
   override def receive: Receive = {
     case CreateInfrastructure =>
       log.info(RECEIVED_MESSAGE_PATTERN.format(CreateInfrastructure))
@@ -92,7 +93,6 @@ class Master extends Actor with ActorLogging {
                 case Some(directionsResult@DirectionsResult(_)) =>
                   memCacheActor ! UpdateCache(geoPointPair, directionsResult)
                 case None =>
-
               }
               requester ! FinalResponse(calculateReduction, maybeResult)
             case Failure(exception) =>
