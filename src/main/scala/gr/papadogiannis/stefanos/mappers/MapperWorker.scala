@@ -5,6 +5,7 @@ import org.bson.codecs.configuration.CodecRegistries.{fromProviders, fromRegistr
 import org.mongodb.scala.MongoClient.DEFAULT_CODEC_REGISTRY
 import org.bson.codecs.configuration.CodecRegistry
 import akka.actor.{Actor, ActorLogging, Props}
+import gr.papadogiannis.stefanos.constants.ApplicationConstants.RECEIVED_MESSAGE_PATTERN
 import org.mongodb.scala.bson.codecs.Macros._
 import gr.papadogiannis.stefanos.models._
 
@@ -19,13 +20,15 @@ class MapperWorker(mapperId: String) extends Actor with ActorLogging {
   override def postStop(): Unit = log.info("Mapper actor {} stopped", mapperId)
 
   override def receive: Receive = {
-    case RequestTrackMapper(mapperName) =>
+    case message@RequestTrackMapper(mapperName) =>
+      log.info(RECEIVED_MESSAGE_PATTERN.format(message.toString))
       sender() ! MapperRegistered(mapperName)
-    case request@CalculateDirections(_, startLat, startLong, endLat, endLong) =>
+    case message@CalculateDirections(_, startLat, startLong, endLat, endLong) =>
+      log.info(RECEIVED_MESSAGE_PATTERN.format(message.toString))
       val senderActorRef = sender()
       map(GeoPoint(startLat, startLong), GeoPoint(endLat, endLong))
         .subscribe(finalResult => {
-          senderActorRef ! RespondMapResults(request, finalResult.toList)
+          senderActorRef ! RespondMapResults(message, finalResult.toList)
         }, throwable => {
           log.error(throwable.toString)
           log.error(throwable.getStackTrace.mkString("\n"))

@@ -1,6 +1,7 @@
 package gr.papadogiannis.stefanos
 
 import gr.papadogiannis.stefanos.routes.{BaseRoutes, SimpleRoutes}
+import gr.papadogiannis.stefanos.models.CreateInfrastructure
 import gr.papadogiannis.stefanos.supervisors.Supervisor
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.actor.{ActorRef, ActorSystem}
@@ -11,8 +12,6 @@ import scala.concurrent.ExecutionContextExecutor
 import scala.io.StdIn
 
 object Main extends Directives with SimpleRoutes {
-
-  object CreateInfrastructure
 
   val actorSystemName = "directions-map-reduce-actor-system"
   val defaultHostName = "localhost"
@@ -51,7 +50,10 @@ object Main extends Directives with SimpleRoutes {
     bindingFuture.flatMap(serverBinding => {
       println(s"Http Server Binding unbound from http://$hostName:$port/")
       serverBinding.unbind()
-    }).onComplete(_ => system.terminate())
+    }).onComplete(_ => {
+      println(s"Actor System $actorSystemName is terminating...")
+      system.terminate()
+    })
 
   }
 

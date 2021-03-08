@@ -1,14 +1,12 @@
 package gr.papadogiannis.stefanos.reducers
 
+import gr.papadogiannis.stefanos.constants.ApplicationConstants.RECEIVED_MESSAGE_PATTERN
 import akka.actor.{Actor, ActorLogging, ActorRef, Cancellable, Props, Terminated}
-import gr.papadogiannis.stefanos.reducers.ReducersGroupQuery.CollectionTimeout
 import gr.papadogiannis.stefanos.models._
 
 import scala.concurrent.duration.FiniteDuration
 
 object ReducersGroupQuery {
-  case object CollectionTimeout
-
   def props(actorToReducerId: Map[ActorRef, String],
             request: CalculateReduction,
             requester: ActorRef,
@@ -40,13 +38,16 @@ class ReducersGroupQuery(actorToReducerId: Map[ActorRef, String],
 
   def waitingForReplies(repliesSoFar: Map[String, ReducerResult],
                         stillWaiting: Set[ActorRef]): Receive = {
-    case RespondReduceResult(_, valueOption) =>
+    case message@RespondReduceResult(_, valueOption) =>
+      log.info(RECEIVED_MESSAGE_PATTERN.format(message.toString))
       val reducerActor = sender()
       val reading = ConcreteReducerResult(valueOption)
       receivedResponse(reducerActor, reading, stillWaiting, repliesSoFar)
-    case Terminated(reducerActor) =>
+    case message@Terminated(reducerActor) =>
+      log.info(RECEIVED_MESSAGE_PATTERN.format(message.toString))
       receivedResponse(reducerActor, ReducerNotAvailable, stillWaiting, repliesSoFar)
     case CollectionTimeout =>
+      log.info(RECEIVED_MESSAGE_PATTERN.format(CollectionTimeout))
       val timedOutReplies =
         stillWaiting.map { reducerActor =>
           val reducerId = actorToReducerId(reducerActor)

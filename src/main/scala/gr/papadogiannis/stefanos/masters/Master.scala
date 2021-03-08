@@ -1,7 +1,7 @@
 package gr.papadogiannis.stefanos.masters
 
-import gr.papadogiannis.stefanos.models.{CalculateDirections, CalculateReduction, ConcreteMapperResult, ConcreteReducerResult, DirectionsResult, FinalResponse, GeoPoint, GeoPointPair, MapperResult, ReducerResult, RequestTrackMapper, RequestTrackReducer, RespondAllMapResults, RespondAllReduceResults}
-import gr.papadogiannis.stefanos.Main.CreateInfrastructure
+import gr.papadogiannis.stefanos.models.{CalculateDirections, CalculateReduction, ConcreteMapperResult, ConcreteReducerResult, CreateInfrastructure, DirectionsResult, FinalResponse, GeoPoint, GeoPointPair, MapperResult, ReducerResult, RequestTrackMapper, RequestTrackReducer, RespondAllMapResults, RespondAllReduceResults}
+import gr.papadogiannis.stefanos.constants.ApplicationConstants.RECEIVED_MESSAGE_PATTERN
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import gr.papadogiannis.stefanos.reducers.ReducersGroup
 import gr.papadogiannis.stefanos.mappers.MappersGroup
@@ -27,6 +27,7 @@ class Master extends Actor with ActorLogging {
 
   override def receive: Receive = {
     case CreateInfrastructure =>
+      log.info(RECEIVED_MESSAGE_PATTERN.format(CreateInfrastructure))
       log.info("Creating reducers group actor.")
       reducersGroupActor = context.actorOf(ReducersGroup.props(), reducersGroupActorName)
       reducersGroupActor ! RequestTrackReducer("moscow")
@@ -38,12 +39,15 @@ class Master extends Actor with ActorLogging {
       mappersGroupActor ! RequestTrackMapper("athens")
       mappersGroupActor ! RequestTrackMapper("jamaica")
     case request@CalculateDirections(_, _, _, _, _) =>
+      log.info(RECEIVED_MESSAGE_PATTERN.format(request.toString))
       requester = sender()
       mappersGroupActor forward request
-    case RespondAllMapResults(request, results) =>
+    case message@RespondAllMapResults(request, results) =>
+      log.info(RECEIVED_MESSAGE_PATTERN.format(message.toString))
       val merged = getMerged(results)
       reducersGroupActor ! CalculateReduction(request.requestId, merged)
-    case RespondAllReduceResults(request, results) =>
+    case message@RespondAllReduceResults(request, results) =>
+      log.info(RECEIVED_MESSAGE_PATTERN.format(message.toString))
       val merged = getMerged(results)
       val value = calculateEuclideanMin(merged)
       requester ! FinalResponse(request, value)

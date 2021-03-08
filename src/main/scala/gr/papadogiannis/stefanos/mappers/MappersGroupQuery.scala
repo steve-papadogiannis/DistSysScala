@@ -1,14 +1,12 @@
 package gr.papadogiannis.stefanos.mappers
 
-import gr.papadogiannis.stefanos.models.{CalculateDirections, ConcreteMapperResult, MapperNotAvailable, MapperResult, MapperTimedOut, RespondAllMapResults, RespondMapResults}
+import gr.papadogiannis.stefanos.models.{CalculateDirections, CollectionTimeout, ConcreteMapperResult, MapperNotAvailable, MapperResult, MapperTimedOut, RespondAllMapResults, RespondMapResults}
+import gr.papadogiannis.stefanos.constants.ApplicationConstants.RECEIVED_MESSAGE_PATTERN
 import akka.actor.{Actor, ActorLogging, ActorRef, Cancellable, Props, Terminated}
-import MappersGroupQuery.CollectionTimeout
 
 import scala.concurrent.duration.FiniteDuration
 
 object MappersGroupQuery {
-  case object CollectionTimeout
-
   def props(actorToMapperId: Map[ActorRef, String],
             request: CalculateDirections,
             requester: ActorRef,
@@ -41,13 +39,16 @@ class MappersGroupQuery(actorToMapperId: Map[ActorRef, String],
 
   def waitingForReplies(repliesSoFar: Map[String, MapperResult],
                         stillWaiting: Set[ActorRef]): Receive = {
-    case RespondMapResults(_, valueOption) =>
+    case message@RespondMapResults(_, valueOption) =>
+      log.info(RECEIVED_MESSAGE_PATTERN.format(message.toString))
       val mapperActor = sender()
       val reading = ConcreteMapperResult(valueOption)
       receivedResponse(mapperActor, reading, stillWaiting, repliesSoFar)
-    case Terminated(mapperActor) =>
+    case message@Terminated(mapperActor) =>
+      log.info(RECEIVED_MESSAGE_PATTERN.format(message.toString))
       receivedResponse(mapperActor, MapperNotAvailable, stillWaiting, repliesSoFar)
     case CollectionTimeout =>
+      log.info(RECEIVED_MESSAGE_PATTERN.format(CollectionTimeout))
       val timedOutReplies =
         stillWaiting.map { mapperActor =>
           val mapperId = actorToMapperId(mapperActor)

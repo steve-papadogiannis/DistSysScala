@@ -1,7 +1,8 @@
 package gr.papadogiannis.stefanos.reducers
 
-import gr.papadogiannis.stefanos.models.{CalculateReduction, ReducerRegistered, ReplyReducerList, RequestReducerList, RequestTrackReducer}
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Terminated}
+import gr.papadogiannis.stefanos.constants.ApplicationConstants.RECEIVED_MESSAGE_PATTERN
+import gr.papadogiannis.stefanos.models._
 
 import scala.concurrent.duration._
 
@@ -21,6 +22,7 @@ class ReducersGroup extends Actor with ActorLogging {
 
   override def receive: Receive = {
     case message@RequestTrackReducer(reducerName) =>
+      log.info(RECEIVED_MESSAGE_PATTERN.format(message.toString))
       val reducerActor = reducerNameToReducerActorRef.get(reducerName) match {
         case Some(reducerActor) => reducerActor
         case None =>
@@ -29,16 +31,20 @@ class ReducersGroup extends Actor with ActorLogging {
           reducerActor
       }
       reducerActor ! message
-    case Terminated(reducerActor) =>
+    case message@Terminated(reducerActor) =>
+      log.info(RECEIVED_MESSAGE_PATTERN.format(message.toString))
       val reducerName = reducerActorRefToReducerName(reducerActor)
       log.info("Reducer actor {} has been terminated", reducerName)
       reducerActorRefToReducerName -= reducerActor
       reducerNameToReducerActorRef -= reducerName
-    case RequestReducerList(requestId) =>
+    case message@RequestReducerList(requestId) =>
+      log.info(RECEIVED_MESSAGE_PATTERN.format(message.toString))
       sender() ! ReplyReducerList(requestId, reducerNameToReducerActorRef.keySet)
     case request@CalculateReduction(requestId, _) =>
+      log.info(RECEIVED_MESSAGE_PATTERN.format(request.toString))
       context.actorOf(ReducersGroupQuery.props(reducerActorRefToReducerName, request, sender(), 5.minutes), s"reducers-group-query-$requestId")
-    case ReducerRegistered(reducerName) =>
+    case message@ReducerRegistered(reducerName) =>
+      log.info(RECEIVED_MESSAGE_PATTERN.format(message.toString))
       log.info("Registering Reducer Actor [{}]", reducerName)
       reducerNameToReducerActorRef += reducerName -> sender()
       reducerActorRefToReducerName += sender() -> reducerName

@@ -2,6 +2,7 @@ package gr.papadogiannis.stefanos.mappers
 
 import gr.papadogiannis.stefanos.models.{CalculateDirections, MapperRegistered, ReplyMapperList, RequestMapperList, RequestTrackMapper}
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Terminated}
+import gr.papadogiannis.stefanos.constants.ApplicationConstants.RECEIVED_MESSAGE_PATTERN
 
 import scala.concurrent.duration._
 
@@ -21,6 +22,7 @@ class MappersGroup(masterActorRef: ActorRef) extends Actor with ActorLogging {
 
   override def receive: Receive = {
     case message@RequestTrackMapper(mapperName) =>
+      log.info(RECEIVED_MESSAGE_PATTERN.format(message.toString))
       val mapperActor = mapperNameToMapperActorRef.get(mapperName) match {
         case Some(mapperActor) => mapperActor
         case None =>
@@ -29,16 +31,20 @@ class MappersGroup(masterActorRef: ActorRef) extends Actor with ActorLogging {
           mapperActor
       }
       mapperActor ! message
-    case Terminated(mapperActor) =>
+    case message@Terminated(mapperActor) =>
+      log.info(RECEIVED_MESSAGE_PATTERN.format(message.toString))
       val mapperName = mapperActorRefToMapperName(mapperActor)
       log.info("Mapper actor {} has been terminated", mapperName)
       mapperActorRefToMapperName -= mapperActor
       mapperNameToMapperActorRef -= mapperName
-    case RequestMapperList(requestId) =>
+    case message@RequestMapperList(requestId) =>
+      log.info(RECEIVED_MESSAGE_PATTERN.format(message.toString))
       sender() ! ReplyMapperList(requestId, mapperNameToMapperActorRef.keySet)
     case request@CalculateDirections(requestId, _, _, _, _) =>
+      log.info(RECEIVED_MESSAGE_PATTERN.format(request.toString))
       context.actorOf(MappersGroupQuery.props(mapperActorRefToMapperName, request, masterActorRef, 5.minutes), s"mappers-group-query-$requestId")
-    case MapperRegistered(mapperName) =>
+    case message@MapperRegistered(mapperName) =>
+      log.info(RECEIVED_MESSAGE_PATTERN.format(message.toString))
       log.info("Registering Mapper Actor [{}]", mapperName)
       mapperNameToMapperActorRef += mapperName -> sender()
       mapperActorRefToMapperName += sender() -> mapperName

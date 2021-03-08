@@ -1,6 +1,7 @@
 package gr.papadogiannis.stefanos.reducers
 
 import gr.papadogiannis.stefanos.models.{CalculateReduction, DirectionsResult, GeoPointPair, ReducerRegistered, RequestTrackReducer, RespondReduceResult}
+import gr.papadogiannis.stefanos.constants.ApplicationConstants.RECEIVED_MESSAGE_PATTERN
 import akka.actor.{Actor, ActorLogging, Props}
 
 object ReducerWorker {
@@ -14,9 +15,11 @@ class ReducerWorker(name: String) extends Actor with ActorLogging {
   override def postStop(): Unit = log.info("Reducer actor {} stopped", name)
 
   override def receive: Receive = {
-    case RequestTrackReducer(reducerName) =>
+    case message@RequestTrackReducer(reducerName) =>
+      log.info(RECEIVED_MESSAGE_PATTERN.format(message.toString))
       sender() ! ReducerRegistered(reducerName)
-    case CalculateReduction(requestId, merged) =>
+    case message@CalculateReduction(requestId, merged) =>
+      log.info(RECEIVED_MESSAGE_PATTERN.format(message.toString))
       val finalResult = reduce(merged)
       sender() ! RespondReduceResult(requestId, finalResult)
   }
