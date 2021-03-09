@@ -7,6 +7,7 @@ import akka.http.scaladsl.server.{Directives, Route}
 import akka.actor.{ActorRef, ActorSystem}
 import akka.stream.ActorMaterializer
 import akka.http.scaladsl.Http
+import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.ExecutionContextExecutor
 import scala.io.StdIn
@@ -23,6 +24,8 @@ object Main extends Directives with SimpleRoutes {
   implicit var system: ActorSystem = _
   var supervisor: ActorRef = _
   var counter: Long = 0L
+
+  val logger: Logger = LoggerFactory.getLogger(Main.getClass)
 
   def main(args: Array[String]): Unit = {
 
@@ -43,15 +46,15 @@ object Main extends Directives with SimpleRoutes {
 
     val bindingFuture = Http().bindAndHandle(routes, hostName, port)
 
-    println(s"Http Server Binding bound at http://$hostName:$port/\nSubmit any input to STOP...")
+    logger.info(s"Http Server Binding bound at http://$hostName:$port/\nSubmit any input to STOP...")
 
     StdIn.readLine()
 
     bindingFuture.flatMap(serverBinding => {
-      println(s"Http Server Binding unbound from http://$hostName:$port/")
+      logger.info(s"Http Server Binding unbound from http://$hostName:$port/")
       serverBinding.unbind()
     }).onComplete(_ => {
-      println(s"Actor System $actorSystemName is terminating...")
+      logger.info(s"Actor System $actorSystemName is terminating...")
       system.terminate()
     })
 
