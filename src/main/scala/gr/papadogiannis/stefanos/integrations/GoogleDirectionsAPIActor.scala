@@ -2,10 +2,9 @@ package gr.papadogiannis.stefanos.integrations
 
 import akka.actor.{Actor, ActorLogging, Props}
 import com.google.maps.{DirectionsApi, GeoApiContext}
-import com.typesafe.config.ConfigFactory
 import gr.papadogiannis.stefanos.constants.ApplicationConstants.RECEIVED_MESSAGE_PATTERN
 import gr.papadogiannis.stefanos.messages.{GetDirections, GoogleAPIResponse}
-import gr.papadogiannis.stefanos.models.{DirectionsLeg, DirectionsResult, DirectionsRoute, DirectionsStep, Duration, EncodedPolyline, LatLng}
+import gr.papadogiannis.stefanos.models._
 
 object GoogleDirectionsAPIActor {
   def props(): Props = Props(new GoogleDirectionsAPIActor)
@@ -23,7 +22,7 @@ class GoogleDirectionsAPIActor extends Actor with ActorLogging {
       val geoPointPair = calculateReduction.request.geoPointPair
       val geoApiContext = new GeoApiContext
 
-      val apiKey = ConfigFactory.load().getString("api.key")
+      val apiKey = System.getenv("API_KEY")
       geoApiContext.setApiKey(apiKey)
       val maybeResult = try {
         val googleDirectionsResult = DirectionsApi
