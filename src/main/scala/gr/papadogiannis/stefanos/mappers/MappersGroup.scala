@@ -7,10 +7,12 @@ import gr.papadogiannis.stefanos.messages.{CalculateDirections, MapperRegistered
 import scala.concurrent.duration._
 
 object MappersGroup {
-  def props(masterActorRef: ActorRef): Props = Props(new MappersGroup(masterActorRef))
+  def props(masterActorRef: ActorRef, mongoActorRef: ActorRef): Props =
+    Props(new MappersGroup(masterActorRef, mongoActorRef))
 }
 
-class MappersGroup(masterActorRef: ActorRef) extends Actor with ActorLogging {
+class MappersGroup(masterActorRef: ActorRef, mongoActorRef: ActorRef)
+  extends Actor with ActorLogging {
 
   var mapperNameToMapperActorRef = Map.empty[String, ActorRef]
 
@@ -27,7 +29,7 @@ class MappersGroup(masterActorRef: ActorRef) extends Actor with ActorLogging {
         case Some(mapperActor) => mapperActor
         case None =>
           log.info("Creating mapper actor [{}]", mapperName)
-          val mapperActor = context.actorOf(MapperWorker.props(mapperName), s"$mapperName")
+          val mapperActor = context.actorOf(MapperWorker.props(mapperName, mongoActorRef), s"$mapperName")
           mapperActor
       }
       mapperActor ! message

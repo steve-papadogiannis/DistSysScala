@@ -5,7 +5,9 @@ import gr.papadogiannis.stefanos.caches.MemCache
 import gr.papadogiannis.stefanos.constants.ApplicationConstants.RECEIVED_MESSAGE_PATTERN
 import gr.papadogiannis.stefanos.integrations.GoogleDirectionsAPIActor
 import gr.papadogiannis.stefanos.mappers.MappersGroup
+import gr.papadogiannis.stefanos.messages
 import gr.papadogiannis.stefanos.messages._
+import gr.papadogiannis.stefanos.repos.MongoActor
 import gr.papadogiannis.stefanos.models.{DirectionsResult, GeoPoint, GeoPointPair}
 import gr.papadogiannis.stefanos.reducers.ReducersGroup
 
@@ -19,18 +21,19 @@ class Master extends Actor with ActorLogging {
   val reducersGroupActorName = "reducers-group-actor"
   val mappersGroupActorName = "mappers-group-actor"
   val memCacheActorName = "mem-cache-actor"
+  val mongoActorName = "mongo-actor"
 
   var googleDirectionsAPIActor: ActorRef = _
   var reducersGroupActor: ActorRef = _
   var mappersGroupActor: ActorRef = _
   var memCacheActor: ActorRef = _
+  var mongoActor: ActorRef = _
 
   var requestIdToRequester = Map.empty[Long, ActorRef]
 
   override def preStart(): Unit = log.info("Master started")
 
   override def postStop(): Unit = log.info("Master stopped")
-
   override def receive: Receive = {
     case CreateInfrastructure =>
       log.info(RECEIVED_MESSAGE_PATTERN.format(CreateInfrastructure))
@@ -38,11 +41,13 @@ class Master extends Actor with ActorLogging {
       memCacheActor = context.actorOf(MemCache.props(), memCacheActorName)
       log.info("Creating google directions API actor.")
       googleDirectionsAPIActor = context.actorOf(GoogleDirectionsAPIActor.props(), googleDirectionsAPIActorName)
+      log.info("Creating google directions API actor.")
+      mongoActor = context.actorOf(MongoActor.props(), mongoActorName)
       log.info("Creating reducers group actor.")
       reducersGroupActor = context.actorOf(ReducersGroup.props(), reducersGroupActorName)
       reducersGroupActor ! RequestTrackReducer("moscow")
       log.info("Creating mappers group actor.")
-      mappersGroupActor = context.actorOf(MappersGroup.props(this.self), mappersGroupActorName)
+      mappersGroupActor = context.actorOf(MappersGroup.props(this.self, mongoActor), mappersGroupActorName)
       context.watch(mappersGroupActor)
       mappersGroupActor ! RequestTrackMapper("havana")
       mappersGroupActor ! RequestTrackMapper("sao-paolo")
@@ -84,6 +89,7 @@ class Master extends Actor with ActorLogging {
       maybeResult match {
         case Some(directionsResult@DirectionsResult(_)) =>
           memCacheActor ! UpdateCache(calculateReduction.request.geoPointPair, directionsResult)
+          mongoActor ! UpdateDB(calculateReduction.request.geoPointPair, directionsResult)
         case None =>
       }
       processResponse(calculateReduction, maybeResult)

@@ -21,7 +21,7 @@ class GoogleDirectionsAPIActor extends Actor with ActorLogging {
       log.info(RECEIVED_MESSAGE_PATTERN.format(message.toString))
       val geoPointPair = calculateReduction.request.geoPointPair
       val geoApiContext = new GeoApiContext
-      geoApiContext.setApiKey("")
+      geoApiContext.setApiKey("AIzaSyDwFXXT_GYEwph93lOqBfF6-Mw-K0av0xY")
       val maybeResult = try {
         val googleDirectionsResult = DirectionsApi
           .newRequest(geoApiContext)

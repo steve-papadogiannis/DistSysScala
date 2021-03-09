@@ -6,10 +6,10 @@ import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import gr.papadogiannis.stefanos.models._
 
 object MapperWorker {
-  def props(mapperId: String): Props = Props(new MapperWorker(mapperId))
+  def props(mapperId: String, mongoActorRef: ActorRef): Props = Props(new MapperWorker(mapperId, mongoActorRef))
 }
 
-class MapperWorker(mapperId: String) extends Actor with ActorLogging {
+class MapperWorker(mapperId: String, mongoActorRef: ActorRef) extends Actor with ActorLogging {
 
   override def preStart(): Unit = log.info("Mapper actor {} started", mapperId)
 
@@ -24,8 +24,9 @@ class MapperWorker(mapperId: String) extends Actor with ActorLogging {
     case message@CalculateDirections(requestId, _) =>
       log.info(RECEIVED_MESSAGE_PATTERN.format(message.toString))
       requestIdToRequester = requestIdToRequester + (requestId -> sender())
-      mongoActor ! FindAll(message)
-    case DBResult(calculateDirections, directionsResultWrappers) =>
+      mongoActorRef ! FindAll(message)
+    case message@DBResult(calculateDirections, directionsResultWrappers) =>
+      log.info(RECEIVED_MESSAGE_PATTERN.format(message.toString))
       val pairToResults = map(calculateDirections.geoPointPair, directionsResultWrappers)
       processResponse(calculateDirections, pairToResults.toList)
   }
