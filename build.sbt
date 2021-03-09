@@ -21,3 +21,9 @@ libraryDependencies += "com.typesafe.akka" %% "akka-http-spray-json" % "10.0.9"
 
 // https://mvnrepository.com/artifact/org.mongodb.scala/mongo-scala-driver
 libraryDependencies += "org.mongodb.scala" %% "mongo-scala-driver" % "4.2.2"
+
+// https://mvnrepository.com/artifact/org.slf4j/slf4j-api
+libraryDependencies += "org.slf4j" % "slf4j-api" % "1.7.30"
+
+// https://mvnrepository.com/artifact/org.slf4j/slf4j-simple
+libraryDependencies += "org.slf4j" % "slf4j-simple" % "1.7.30"
