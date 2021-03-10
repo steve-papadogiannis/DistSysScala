@@ -25,5 +25,8 @@ libraryDependencies += "org.mongodb.scala" %% "mongo-scala-driver" % "4.2.2"
 // https://mvnrepository.com/artifact/org.slf4j/slf4j-api
 libraryDependencies += "org.slf4j" % "slf4j-api" % "1.7.30"
 
-// https://mvnrepository.com/artifact/org.slf4j/slf4j-simple
-libraryDependencies += "org.slf4j" % "slf4j-simple" % "1.7.30"
+// https://mvnrepository.com/artifact/org.slf4j/slf4j-log4j12
+libraryDependencies += "org.slf4j" % "slf4j-log4j12" % "1.7.30"
+
+// https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-core
+libraryDependencies += "org.apache.logging.log4j" % "log4j-core" % "2.14.0"
