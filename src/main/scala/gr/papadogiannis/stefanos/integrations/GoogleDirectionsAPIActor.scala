@@ -12,7 +12,14 @@ object GoogleDirectionsAPIActor {
 
 class GoogleDirectionsAPIActor extends Actor with ActorLogging {
 
-  override def preStart(): Unit = log.info("GoogleDirectionsAPIActor started")
+  var geoApiContext: GeoApiContext = _
+
+  override def preStart(): Unit = {
+    log.info("GoogleDirectionsAPIActor started")
+    geoApiContext = new GeoApiContext
+    val apiKey = System.getenv("API_KEY")
+    geoApiContext.setApiKey(apiKey)
+  }
 
   override def postStop(): Unit = log.info("GoogleDirectionsAPIActor stopped")
 
@@ -20,9 +27,7 @@ class GoogleDirectionsAPIActor extends Actor with ActorLogging {
     case message@GetDirections(calculateReduction) =>
       log.info(RECEIVED_MESSAGE_PATTERN.format(message.toString))
       val geoPointPair = calculateReduction.request.geoPointPair
-      val geoApiContext = new GeoApiContext
-      val apiKey = System.getenv("API_KEY")
-      geoApiContext.setApiKey(apiKey)
+
       val maybeResult = try {
         val googleDirectionsResult = DirectionsApi
           .newRequest(geoApiContext)
