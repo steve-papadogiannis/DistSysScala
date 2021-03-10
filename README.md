@@ -26,8 +26,14 @@ sbt clean compile
 
 ## Run ##
 
+Below environment variable should be set before running the project:
+
+```shell
+export API_KEY=<the value of the API Key>
+```
+
 Below command should be issued inside project's directory:
 
-```
+```sbt
 sbt run
 ```
