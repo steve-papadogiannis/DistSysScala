@@ -1,15 +1,15 @@
 package gr.papadogiannis.stefanos.repos
 
-import akka.actor.{Actor, ActorLogging, Props}
+import org.mongodb.scala.{ConnectionString, MongoClient, MongoClientSettings, MongoCollection, MongoDatabase}
 import gr.papadogiannis.stefanos.constants.ApplicationConstants.RECEIVED_MESSAGE_PATTERN
-import gr.papadogiannis.stefanos.messages.{DBResult, FindAll, UpdateDB}
-import gr.papadogiannis.stefanos.models._
 import org.bson.codecs.configuration.CodecRegistries.{fromProviders, fromRegistries}
-import org.bson.codecs.configuration.CodecRegistry
+import gr.papadogiannis.stefanos.messages.{DBResult, FindAll, UpdateDB}
 import org.mongodb.scala.MongoClient.DEFAULT_CODEC_REGISTRY
-import org.mongodb.scala.bson.codecs.Macros._
+import org.bson.codecs.configuration.CodecRegistry
 import org.mongodb.scala.connection.SocketSettings
-import org.mongodb.scala.{ConnectionString, Document, MongoClient, MongoClientSettings, MongoCollection, MongoDatabase}
+import akka.actor.{Actor, ActorLogging, Props}
+import org.mongodb.scala.bson.codecs.Macros._
+import gr.papadogiannis.stefanos.models._
 
 import java.util.concurrent.TimeUnit
 

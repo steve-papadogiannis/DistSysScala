@@ -1,5 +1,6 @@
 package gr.papadogiannis.stefanos.validators
 
+import gr.papadogiannis.stefanos.constants.ApplicationConstants.{LATITUDE_LOWER_BOUND, LATITUDE_UPPER_BOUND, LONGITUDE_LOWER_BOUND, LONGITUDE_UPPER_BOUND}
 import gr.papadogiannis.stefanos.validators.RequestValidation.{AboveMaximum, BelowMinimum, EmptyField}
 import cats.data.ValidatedNel
 import cats.implicits._
@@ -52,9 +53,9 @@ trait FieldValidator {
       .combine(validateMaximum(field, fieldName, upperBound))
 
   def validateLatitude(field: Double, fieldName: String): ValidationResult[Double] =
-    validateCoordinate(field, fieldName, -85, 85)
+    validateCoordinate(field, fieldName, LATITUDE_LOWER_BOUND, LATITUDE_UPPER_BOUND)
 
   def validateLongitude(field: Double, fieldName: String): ValidationResult[Double] =
-    validateCoordinate(field, fieldName, -180, 180)
+    validateCoordinate(field, fieldName, LONGITUDE_LOWER_BOUND, LONGITUDE_UPPER_BOUND)
 
 }

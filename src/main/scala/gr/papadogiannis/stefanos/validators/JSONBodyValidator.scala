@@ -1,5 +1,6 @@
 package gr.papadogiannis.stefanos.validators
 
+import gr.papadogiannis.stefanos.constants.ApplicationConstants.{END_POINT_LATITUDE_FIELD_NAME, END_POINT_LONGITUDE_FIELD_NAME, NEW_LINE_SEPARATOR, START_POINT_LATITUDE_FIELD_NAME, START_POINT_LONGITUDE_FIELD_NAME}
 import akka.http.scaladsl.unmarshalling.{FromRequestUnmarshaller, Unmarshaller}
 import gr.papadogiannis.stefanos.models.{GeoPoint, GeoPointPair}
 import cats.data.Validated.{Invalid, Valid}
@@ -17,12 +18,12 @@ trait JSONBodyValidator extends FieldValidator {
     f(formValidation(form))
 
   implicit lazy val jsonBodyValidation: JSONBodyValidation[GeoPointPair] = {
-    case GeoPointPair(GeoPoint(startLat, startLng), GeoPoint(endLat, endLng)) => (
-      validateLatitude(startLat, "Start Point Latitude"),
-      validateLongitude(startLng, "Start Point Longitude"),
-      validateLatitude(endLat, "End Point Latitude"),
-      validateLongitude(endLng, "End Point Longitude"))
-      .map4((a, b, c, d) => GeoPointPair(GeoPoint(a, b), GeoPoint(c, d)))
+    case GeoPointPair(GeoPoint(startLat, startLng), GeoPoint(endLat, endLng)) =>
+      (validateLatitude(startLat, START_POINT_LATITUDE_FIELD_NAME),
+        validateLongitude(startLng, START_POINT_LONGITUDE_FIELD_NAME),
+        validateLatitude(endLat, END_POINT_LATITUDE_FIELD_NAME),
+        validateLongitude(endLng, END_POINT_LONGITUDE_FIELD_NAME))
+        .map4((a, b, c, d) => GeoPointPair(GeoPoint(a, b), GeoPoint(c, d)))
   }
 
   implicit class ValidationRequestMarshaller[A](um: FromRequestUnmarshaller[A]) {
@@ -34,7 +35,7 @@ trait JSONBodyValidator extends FieldValidator {
               case Valid(_) => Future.successful(entity)
               case Invalid(failures) =>
                 Future.failed(new IllegalArgumentException(
-                  failures.map(_.errorMessage).toList.mkString("\n")))
+                  failures.map(_.errorMessage).toList.mkString(NEW_LINE_SEPARATOR)))
             }
       }
   }

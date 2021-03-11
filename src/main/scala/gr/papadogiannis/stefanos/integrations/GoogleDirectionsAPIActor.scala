@@ -1,9 +1,9 @@
 package gr.papadogiannis.stefanos.integrations
 
-import akka.actor.{Actor, ActorLogging, Props}
-import com.google.maps.{DirectionsApi, GeoApiContext}
-import gr.papadogiannis.stefanos.constants.ApplicationConstants.RECEIVED_MESSAGE_PATTERN
+import gr.papadogiannis.stefanos.constants.ApplicationConstants.{API_KEY, RECEIVED_MESSAGE_PATTERN}
 import gr.papadogiannis.stefanos.messages.{GetDirections, GoogleAPIResponse}
+import com.google.maps.{DirectionsApi, GeoApiContext}
+import akka.actor.{Actor, ActorLogging, Props}
 import gr.papadogiannis.stefanos.models._
 
 object GoogleDirectionsAPIActor {
@@ -17,7 +17,7 @@ class GoogleDirectionsAPIActor extends Actor with ActorLogging {
   override def preStart(): Unit = {
     log.info("GoogleDirectionsAPIActor started")
     geoApiContext = new GeoApiContext
-    val apiKey = System.getenv("API_KEY")
+    val apiKey = System.getenv(API_KEY)
     geoApiContext.setApiKey(apiKey)
   }
 

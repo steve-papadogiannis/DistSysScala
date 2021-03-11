@@ -1,27 +1,20 @@
 package gr.papadogiannis.stefanos.masters
 
-import akka.actor.{Actor, ActorLogging, ActorRef, Props}
-import gr.papadogiannis.stefanos.caches.MemCache
-import gr.papadogiannis.stefanos.constants.ApplicationConstants.RECEIVED_MESSAGE_PATTERN
-import gr.papadogiannis.stefanos.integrations.GoogleDirectionsAPIActor
-import gr.papadogiannis.stefanos.mappers.MappersGroup
-import gr.papadogiannis.stefanos.messages
-import gr.papadogiannis.stefanos.messages._
-import gr.papadogiannis.stefanos.repos.MongoActor
 import gr.papadogiannis.stefanos.models.{DirectionsResult, GeoPoint, GeoPointPair}
+import gr.papadogiannis.stefanos.integrations.GoogleDirectionsAPIActor
+import gr.papadogiannis.stefanos.constants.ApplicationConstants._
+import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import gr.papadogiannis.stefanos.reducers.ReducersGroup
+import gr.papadogiannis.stefanos.mappers.MappersGroup
+import gr.papadogiannis.stefanos.repos.MongoActor
+import gr.papadogiannis.stefanos.caches.MemCache
+import gr.papadogiannis.stefanos.messages._
 
 object Master {
   def props(): Props = Props(new Master)
 }
 
 class Master extends Actor with ActorLogging {
-
-  val googleDirectionsAPIActorName = "google-directions-api-actor"
-  val reducersGroupActorName = "reducers-group-actor"
-  val mappersGroupActorName = "mappers-group-actor"
-  val memCacheActorName = "mem-cache-actor"
-  val mongoActorName = "mongo-actor"
 
   var googleDirectionsAPIActor: ActorRef = _
   var reducersGroupActor: ActorRef = _
@@ -34,20 +27,21 @@ class Master extends Actor with ActorLogging {
   override def preStart(): Unit = log.info("Master started")
 
   override def postStop(): Unit = log.info("Master stopped")
+
   override def receive: Receive = {
     case CreateInfrastructure =>
       log.info(RECEIVED_MESSAGE_PATTERN.format(CreateInfrastructure))
       log.info("Creating mem cache actor.")
-      memCacheActor = context.actorOf(MemCache.props(), memCacheActorName)
+      memCacheActor = context.actorOf(MemCache.props(), MEM_CACHE_ACTOR_NAME)
       log.info("Creating google directions API actor.")
-      googleDirectionsAPIActor = context.actorOf(GoogleDirectionsAPIActor.props(), googleDirectionsAPIActorName)
+      googleDirectionsAPIActor = context.actorOf(GoogleDirectionsAPIActor.props(), GOOGLE_DIRECTIONS_API_ACTOR_NAME)
       log.info("Creating google directions API actor.")
-      mongoActor = context.actorOf(MongoActor.props(), mongoActorName)
+      mongoActor = context.actorOf(MongoActor.props(), MONGO_ACTOR_NAME)
       log.info("Creating reducers group actor.")
-      reducersGroupActor = context.actorOf(ReducersGroup.props(), reducersGroupActorName)
+      reducersGroupActor = context.actorOf(ReducersGroup.props(), REDUCERS_GROUP_ACTOR_NAME)
       reducersGroupActor ! RequestTrackReducer("moscow")
       log.info("Creating mappers group actor.")
-      mappersGroupActor = context.actorOf(MappersGroup.props(this.self, mongoActor), mappersGroupActorName)
+      mappersGroupActor = context.actorOf(MappersGroup.props(this.self, mongoActor), MAPPERS_GROUP_ACTOR_NAME)
       context.watch(mappersGroupActor)
       mappersGroupActor ! RequestTrackMapper("havana")
       mappersGroupActor ! RequestTrackMapper("sao-paolo")

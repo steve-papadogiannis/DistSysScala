@@ -1,6 +1,6 @@
 package gr.papadogiannis.stefanos.servers
 
-import gr.papadogiannis.stefanos.constants.ApplicationConstants.RECEIVED_MESSAGE_PATTERN
+import gr.papadogiannis.stefanos.constants.ApplicationConstants.{MASTER_NAME, RECEIVED_MESSAGE_PATTERN}
 import gr.papadogiannis.stefanos.messages.{CalculateDirections, CreateInfrastructure}
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import gr.papadogiannis.stefanos.masters.Master
@@ -11,8 +11,6 @@ object Server {
 
 class Server extends Actor with ActorLogging {
 
-  val masterName = "master"
-
   var master: ActorRef = _
 
   override def preStart(): Unit = log.info("Server started")
@@ -22,7 +20,7 @@ class Server extends Actor with ActorLogging {
   override def receive: Receive = {
     case CreateInfrastructure =>
       log.info(RECEIVED_MESSAGE_PATTERN.format(CreateInfrastructure))
-      master = context.actorOf(Master.props(), masterName)
+      master = context.actorOf(Master.props(), MASTER_NAME)
       master ! CreateInfrastructure
     case request@CalculateDirections(_, _) =>
       log.info(RECEIVED_MESSAGE_PATTERN.format(request.toString))

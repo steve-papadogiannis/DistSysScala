@@ -1,8 +1,8 @@
 package gr.papadogiannis.stefanos.caches
 
 import gr.papadogiannis.stefanos.constants.ApplicationConstants.RECEIVED_MESSAGE_PATTERN
-import gr.papadogiannis.stefanos.models.{DirectionsResult, GeoPointPair}
 import gr.papadogiannis.stefanos.messages.{CacheCheck, CacheHit, CacheMiss, UpdateCache}
+import gr.papadogiannis.stefanos.models.{DirectionsResult, GeoPointPair}
 import akka.actor.{Actor, ActorLogging, Props}
 
 object MemCache {

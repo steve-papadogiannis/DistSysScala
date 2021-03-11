@@ -1,23 +1,19 @@
 package gr.papadogiannis.stefanos
 
+import gr.papadogiannis.stefanos.constants.ApplicationConstants.{ACTOR_SYSTEM_NAME, DEFAULT_HOST_NAME, DEFAULT_PORT, SUPERVISOR_NAME}
 import gr.papadogiannis.stefanos.routes.{BaseRoutes, SimpleRoutes}
 import gr.papadogiannis.stefanos.messages.CreateInfrastructure
 import gr.papadogiannis.stefanos.supervisors.Supervisor
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.actor.{ActorRef, ActorSystem}
+import org.slf4j.{Logger, LoggerFactory}
 import akka.stream.ActorMaterializer
 import akka.http.scaladsl.Http
-import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.ExecutionContextExecutor
 import scala.io.StdIn
 
 object Main extends Directives with SimpleRoutes {
-
-  val actorSystemName = "directions-map-reduce-actor-system"
-  val defaultHostName = "localhost"
-  val supervisorName = "supervisor"
-  val defaultPort: Int = 8383
 
   val routes: Route = BaseRoutes.baseRoutes ~ simpleRoutes
 
@@ -29,16 +25,16 @@ object Main extends Directives with SimpleRoutes {
 
   def main(args: Array[String]): Unit = {
 
-    val hostName = args.headOption.getOrElse(defaultHostName);
+    val hostName = args.headOption.getOrElse(DEFAULT_HOST_NAME);
     val port = Option(args)
       .filter(args => args.length > 1)
       .map(args => args(1))
       .map(_.toInt)
-      .getOrElse(defaultPort)
+      .getOrElse(DEFAULT_PORT)
 
-    system = ActorSystem(actorSystemName)
+    system = ActorSystem(ACTOR_SYSTEM_NAME)
 
-    supervisor = system.actorOf(Supervisor.props(), supervisorName)
+    supervisor = system.actorOf(Supervisor.props(), SUPERVISOR_NAME)
     supervisor ! CreateInfrastructure
 
     implicit val materializer: ActorMaterializer = ActorMaterializer()
@@ -54,7 +50,7 @@ object Main extends Directives with SimpleRoutes {
       logger.info(s"Http Server Binding unbound from http://$hostName:$port/")
       serverBinding.unbind()
     }).onComplete(_ => {
-      logger.info(s"Actor System $actorSystemName is terminating...")
+      logger.info(s"Actor System $ACTOR_SYSTEM_NAME is terminating...")
       system.terminate()
     })
 

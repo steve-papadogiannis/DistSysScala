@@ -1,7 +1,7 @@
 package gr.papadogiannis.stefanos.mappers
 
 import gr.papadogiannis.stefanos.messages.{CalculateDirections, DBResult, FindAll, MapperRegistered, RequestTrackMapper, RespondMapResults}
-import gr.papadogiannis.stefanos.constants.ApplicationConstants.RECEIVED_MESSAGE_PATTERN
+import gr.papadogiannis.stefanos.constants.ApplicationConstants.{DECIMAL_FORMAT, RECEIVED_MESSAGE_PATTERN}
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import gr.papadogiannis.stefanos.models._
 
@@ -69,7 +69,7 @@ class MapperWorker(mapperId: String, mongoActorRef: ActorRef) extends Actor with
 
   def roundTo2Decimals(number: Double): Double = {
     import java.text.DecimalFormat
-    val decimalFormat = new DecimalFormat("###.##")
+    val decimalFormat = new DecimalFormat(DECIMAL_FORMAT)
     decimalFormat.format(number).toDouble
   }
 
