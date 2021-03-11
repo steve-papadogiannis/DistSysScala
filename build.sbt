@@ -30,3 +30,6 @@ libraryDependencies += "org.slf4j" % "slf4j-log4j12" % "1.7.30"
 
 // https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-core
 libraryDependencies += "org.apache.logging.log4j" % "log4j-core" % "2.14.0"
+
+// https://mvnrepository.com/artifact/org.typelevel/cats
+libraryDependencies += "org.typelevel" %% "cats-core" % "0.9.0"

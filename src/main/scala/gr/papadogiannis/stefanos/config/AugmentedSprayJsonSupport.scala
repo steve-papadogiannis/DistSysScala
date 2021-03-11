@@ -1,9 +1,8 @@
 package gr.papadogiannis.stefanos.config
 
-import gr.papadogiannis.stefanos.models.{DirectionsLeg, DirectionsResult, DirectionsRoute, DirectionsStep, Duration, EncodedPolyline, LatLng}
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import gr.papadogiannis.stefanos.messages.{Incoming, Outgoing}
 import spray.json.{DefaultJsonProtocol, RootJsonFormat}
+import gr.papadogiannis.stefanos.models._
 
 // The order of the implicits matter, nested to outer
 trait AugmentedSprayJsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
@@ -14,6 +13,6 @@ trait AugmentedSprayJsonSupport extends SprayJsonSupport with DefaultJsonProtoco
   implicit val directionsLeg: RootJsonFormat[DirectionsLeg] = jsonFormat2(DirectionsLeg)
   implicit val directionsRoute: RootJsonFormat[DirectionsRoute] = jsonFormat1(DirectionsRoute)
   implicit val directionsResult: RootJsonFormat[DirectionsResult] = jsonFormat1(DirectionsResult)
-  implicit val incoming: RootJsonFormat[Incoming] = jsonFormat2(Incoming)
-  implicit val outgoing: RootJsonFormat[Outgoing] = jsonFormat2(Outgoing)
+  implicit val geoPoint: RootJsonFormat[GeoPoint] = jsonFormat2(GeoPoint)
+  implicit val geoPointPair: RootJsonFormat[GeoPointPair] = jsonFormat2(GeoPointPair)
 }
