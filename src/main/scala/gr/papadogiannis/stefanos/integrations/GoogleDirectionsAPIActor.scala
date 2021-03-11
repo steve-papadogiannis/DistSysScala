@@ -53,12 +53,13 @@ class GoogleDirectionsAPIActor extends Actor with ActorLogging {
     val routes = googleDirectionsResult.routes.toStream.map(route => {
       val legs = route.legs.toStream.map(leg => {
         val steps = leg.steps.toStream.map(step => {
-          DirectionsStep(
-            LatLng(step.startLocation.lat, step.startLocation.lng),
-            LatLng(step.endLocation.lat, step.endLocation.lng),
-            EncodedPolyline(step.polyline.getEncodedPath))
+          DirectionsStep(EncodedPolyline(step.polyline.getEncodedPath))
         }).toList
-        DirectionsLeg(steps, Duration(leg.duration.inSeconds))
+        DirectionsLeg(
+          LatLng(leg.startLocation.lat, leg.startLocation.lng),
+          LatLng(leg.endLocation.lat, leg.endLocation.lng),
+          steps,
+          Duration(leg.duration.inSeconds))
       }).toList
       DirectionsRoute(legs)
     }).toList

@@ -10,6 +10,8 @@ import gr.papadogiannis.stefanos.repos.MongoActor
 import gr.papadogiannis.stefanos.caches.MemCache
 import gr.papadogiannis.stefanos.messages._
 
+import scala.collection.mutable.ListBuffer
+
 object Master {
   def props(): Props = Props(new Master)
 }
@@ -53,12 +55,7 @@ class Master extends Actor with ActorLogging {
       memCacheActor ! CacheCheck(request)
     case request@CacheHit(calculateDirections, directionsResult) =>
       log.info(RECEIVED_MESSAGE_PATTERN.format(request.toString))
-      val actorRefOption = requestIdToRequester.get(calculateDirections.requestId)
-      actorRefOption.map(actorRef => actorRef ! FinalResponse(
-        CalculateReduction(calculateDirections, List.empty),
-        Some(directionsResult)))
-        .getOrElse(log.warning(s"The actorRef for ${calculateDirections.requestId} was not found"))
-      requestIdToRequester = requestIdToRequester - calculateDirections.requestId
+      processResponse(CalculateReduction(calculateDirections, List.empty), Some(directionsResult))
     case request@CacheMiss(calculateDirections) =>
       log.info(RECEIVED_MESSAGE_PATTERN.format(request.toString))
       mappersGroupActor forward calculateDirections
@@ -91,7 +88,7 @@ class Master extends Actor with ActorLogging {
 
   private def processResponse(calculateReduction: CalculateReduction, valueOption: Option[DirectionsResult]): Unit = {
     val actorRefOption = requestIdToRequester.get(calculateReduction.request.requestId)
-    actorRefOption.map(actorRef => actorRef ! FinalResponse(calculateReduction, valueOption))
+    actorRefOption.map(actorRef => actorRef ! FinalResponse(calculateReduction, valueOption.map(toListOfDoubles)))
       .getOrElse(log.warning(s"The actorRef for ${calculateReduction.request.requestId} was not found"))
     requestIdToRequester = requestIdToRequester - calculateReduction.request.requestId
   }
@@ -151,6 +148,22 @@ class Master extends Actor with ActorLogging {
         accumulatorInner + directionsLeg.duration.inSeconds
       })
     })
+  }
+
+  private def toListOfDoubles(directionsResult: DirectionsResult) = {
+    directionsResult.routes.flatMap(_.legs.toStream)
+      .flatMap(leg => {
+        val list = ListBuffer.empty[Double]
+        list += leg.startLocation.lat
+        list += leg.startLocation.lng
+        leg.steps.flatMap(_.polyline.decodePath).foreach(latLng => {
+          list += latLng.lat
+          list += latLng.lng
+        })
+        list += leg.endLocation.lat
+        list += leg.endLocation.lng
+        list
+      })
   }
 
 }
