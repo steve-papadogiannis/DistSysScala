@@ -9,16 +9,16 @@ import akka.http.scaladsl.server.directives.PathDirectives.path
 import akka.http.scaladsl.server.{ExceptionHandler, Route}
 import akka.util.Timeout
 import gr.papadogiannis.stefanos.Main.{counter, system}
-import gr.papadogiannis.stefanos.config.AugmentedSprayJsonSupport
+import gr.papadogiannis.stefanos.config.{AugmentedSprayJsonSupport, CorsSupport}
 import gr.papadogiannis.stefanos.handlers.RequestHandler
 import gr.papadogiannis.stefanos.messages.Handle
-import gr.papadogiannis.stefanos.models.GeoPointPair
+import gr.papadogiannis.stefanos.models.{GeoPointPair, LatLng}
 import gr.papadogiannis.stefanos.validators.JSONBodyValidator
 import org.slf4j.Logger
 
 import scala.concurrent.duration._
 
-trait SimpleRoutes extends AugmentedSprayJsonSupport with JSONBodyValidator {
+trait SimpleRoutes extends AugmentedSprayJsonSupport with JSONBodyValidator with CorsSupport {
 
   implicit var log: Logger = _
 
@@ -29,7 +29,7 @@ trait SimpleRoutes extends AugmentedSprayJsonSupport with JSONBodyValidator {
         complete(HttpResponse(InternalServerError))
     }
 
-  lazy val simpleRoutes: Route = {
+  lazy val simpleRoutes: Route = corsHandler({
     handleExceptions(exceptionHandler) {
       path("getDirections") {
         post {
@@ -37,13 +37,13 @@ trait SimpleRoutes extends AugmentedSprayJsonSupport with JSONBodyValidator {
             val requestId = counter
             implicit val askTimeout: Timeout = 5.minutes // and a timeout
             counter += 1
-            completeWith(implicitly[ToResponseMarshaller[List[Double]]]) { f =>
+            completeWith(implicitly[ToResponseMarshaller[List[LatLng]]]) { f =>
               system.actorOf(RequestHandler.props(), "request-" + requestId) ! Handle(requestId, entity, f)
             }
           }
         }
       }
     }
-  }
+  })
 
 }

@@ -1,6 +1,6 @@
 package gr.papadogiannis.stefanos.masters
 
-import gr.papadogiannis.stefanos.models.{DirectionsResult, GeoPoint, GeoPointPair}
+import gr.papadogiannis.stefanos.models.{DirectionsResult, GeoPoint, GeoPointPair, LatLng}
 import gr.papadogiannis.stefanos.integrations.GoogleDirectionsAPIActor
 import gr.papadogiannis.stefanos.constants.ApplicationConstants._
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
@@ -88,7 +88,7 @@ class Master extends Actor with ActorLogging {
 
   private def processResponse(calculateReduction: CalculateReduction, valueOption: Option[DirectionsResult]): Unit = {
     val actorRefOption = requestIdToRequester.get(calculateReduction.request.requestId)
-    actorRefOption.map(actorRef => actorRef ! FinalResponse(calculateReduction, valueOption.map(toListOfDoubles)))
+    actorRefOption.map(actorRef => actorRef ! FinalResponse(calculateReduction, valueOption.map(toListOfLatLng)))
       .getOrElse(log.warning(s"The actorRef for ${calculateReduction.request.requestId} was not found"))
     requestIdToRequester = requestIdToRequester - calculateReduction.request.requestId
   }
@@ -150,18 +150,15 @@ class Master extends Actor with ActorLogging {
     })
   }
 
-  private def toListOfDoubles(directionsResult: DirectionsResult) = {
+  private def toListOfLatLng(directionsResult: DirectionsResult) = {
     directionsResult.routes.flatMap(_.legs.toStream)
       .flatMap(leg => {
-        val list = ListBuffer.empty[Double]
-        list += leg.startLocation.lat
-        list += leg.startLocation.lng
+        val list = ListBuffer.empty[LatLng]
+        list += LatLng(leg.startLocation.lat, leg.startLocation.lng)
         leg.steps.flatMap(_.polyline.decodePath).foreach(latLng => {
-          list += latLng.lat
-          list += latLng.lng
+          list += LatLng(latLng.lat, latLng.lng)
         })
-        list += leg.endLocation.lat
-        list += leg.endLocation.lng
+        list += LatLng(leg.endLocation.lat, leg.endLocation.lng)
         list
       })
   }

@@ -1,3 +1,5 @@
 package gr.papadogiannis.stefanos.messages
 
-final case class FinalResponse(request: CalculateReduction, results: Option[List[Double]])
+import gr.papadogiannis.stefanos.models.LatLng
+
+final case class FinalResponse(request: CalculateReduction, results: Option[List[LatLng]])

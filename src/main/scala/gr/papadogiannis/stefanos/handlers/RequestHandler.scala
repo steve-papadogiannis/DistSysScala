@@ -4,6 +4,7 @@ import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import gr.papadogiannis.stefanos.Main.supervisor
 import gr.papadogiannis.stefanos.constants.ApplicationConstants.RECEIVED_MESSAGE_PATTERN
 import gr.papadogiannis.stefanos.messages.{CalculateDirections, FinalResponse, Handle}
+import gr.papadogiannis.stefanos.models.LatLng
 
 object RequestHandler {
   def props(): Props = Props(new RequestHandler())
@@ -11,7 +12,7 @@ object RequestHandler {
 
 class RequestHandler() extends Actor with ActorLogging {
 
-  var complete: List[Double] => Unit = _
+  var complete: List[LatLng] => Unit = _
 
   var requester: ActorRef = _
 
