@@ -10,6 +10,7 @@ import org.mongodb.scala.connection.SocketSettings
 import akka.actor.{Actor, ActorLogging, Props}
 import org.mongodb.scala.bson.codecs.Macros._
 import gr.papadogiannis.stefanos.models._
+import org.mongodb.scala.model.Filters
 
 import java.util.concurrent.TimeUnit
 
@@ -34,10 +35,18 @@ class MongoActor extends Actor with ActorLogging {
   var collection: MongoCollection[DirectionsResultWrapper] = _
 
   override def receive: Receive = {
-    case request@FindAll(calculateDirections) =>
+    case request@FindAll(calculateDirections, mapperId, noOfMappers) =>
       log.info(RECEIVED_MESSAGE_PATTERN.format(request.toString))
       val ref = sender()
-      collection.find()
+      val pair = calculateDirections.geoPointPair
+      val startGeoPoint = pair.startGeoPoint
+      val endGeoPoint = pair.endGeoPoint
+      collection.find(Filters.where(
+        s"Math.abs(this.startPoint.latitude - ${startGeoPoint.latitude}) < 0.0001 && " +
+        s"Math.abs(this.startPoint.longitude - ${startGeoPoint.longitude}) < 0.0001 && " +
+        s"Math.abs(this.endPoint.latitude - ${endGeoPoint.latitude}) < 0.0001 && " +
+        s"Math.abs(this.endPoint.longitude - ${endGeoPoint.longitude}) < 0.0001 && " +
+        s"(${mapperId} === (Array.from(hex_md5((this.startPoint.latitude + this.startPoint.longitude + this.endPoint.latitude + this.endPoint.longitude).toString())).map(elem => elem.codePointAt()).reduce((acc, elem) => acc + elem, 0) % ${noOfMappers}))"))
         .collect()
         .subscribe(finalResult => {
           ref ! DBResult(calculateDirections, finalResult.toList)

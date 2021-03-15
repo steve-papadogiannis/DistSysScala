@@ -23,13 +23,13 @@ class MappersGroup(masterActorRef: ActorRef, mongoActorRef: ActorRef)
   override def postStop(): Unit = log.info("MappersGroup stopped")
 
   override def receive: Receive = {
-    case message@RequestTrackMapper(mapperName) =>
+    case message@RequestTrackMapper(mapperName, mapperId, noOfMappers) =>
       log.info(RECEIVED_MESSAGE_PATTERN.format(message.toString))
       val mapperActor = mapperNameToMapperActorRef.get(mapperName) match {
         case Some(mapperActor) => mapperActor
         case None =>
           log.info("Creating mapper actor [{}]", mapperName)
-          val mapperActor = context.actorOf(MapperWorker.props(mapperName, mongoActorRef), s"$mapperName")
+          val mapperActor = context.actorOf(MapperWorker.props(mapperId, mapperName, noOfMappers, mongoActorRef), s"$mapperName")
           mapperActor
       }
       mapperActor ! message

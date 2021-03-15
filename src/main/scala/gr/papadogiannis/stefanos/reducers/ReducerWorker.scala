@@ -19,7 +19,7 @@ class ReducerWorker(name: String) extends Actor with ActorLogging {
     case message@RequestTrackReducer(reducerName) =>
       log.info(RECEIVED_MESSAGE_PATTERN.format(message.toString))
       sender() ! ReducerRegistered(reducerName)
-    case request@CalculateReduction(requestId, merged) =>
+    case request@CalculateReduction(_, merged) =>
       log.info(RECEIVED_MESSAGE_PATTERN.format(request.toString))
       val finalResult = reduce(merged)
       sender() ! RespondReduceResult(request, finalResult)
@@ -28,11 +28,9 @@ class ReducerWorker(name: String) extends Actor with ActorLogging {
   def reduce(incoming: List[Map[GeoPointPair, DirectionsResult]]): Map[GeoPointPair, List[DirectionsResult]] = {
     incoming.foldLeft(Map.empty[GeoPointPair, List[DirectionsResult]])((accumulator, x) => {
       val geoPointPair = x.keySet.head
-      val list = List.empty[DirectionsResult]
-      x.getOrElse(geoPointPair, DirectionsResult) :: list
+      val list = x.get(geoPointPair).map(result => List(result)).getOrElse(List.empty)
       if (accumulator.contains(geoPointPair))
-        accumulator + (geoPointPair ->
-          (accumulator.getOrElse(geoPointPair, List.empty[DirectionsResult]) :: list).asInstanceOf[List[DirectionsResult]])
+        accumulator + (geoPointPair -> (accumulator.getOrElse(geoPointPair, List.empty[DirectionsResult]) ++ list))
       else
         accumulator + (geoPointPair -> list)
     })
