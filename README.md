@@ -21,7 +21,7 @@ A small project that takes directions queries and produces directions results in
 Below command should be issued inside project's directory:
 
 ```
-sbt clean compile
+sbt clean package
 ```
 
 ## Run ##
