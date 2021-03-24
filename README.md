@@ -15,6 +15,24 @@ A small project that takes directions queries and produces directions results in
 
 ## Sequence Diagram ## 
 
+## Mongo Setup ##
+
+In `docker/mongo` directory there is a `docker-compose.yml` that 
+defines two **Container**s: **Mongo** and **Mongo Express**.
+
+You can issue the below command inside `docker/mongo` 
+in order to startup the containers:
+
+```shell
+docker-compose up
+```
+
+Once the containers are up and running, one can access
+**Mongo Express** application at http://localhost:8081
+
+Create a new schema name **dist-sys**
+
+Inside **dist-sys** create a collection named **directions**.
 
 ## Build ##
 
