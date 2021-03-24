@@ -17,10 +17,12 @@ control MappersGroupQuery <<Actor>>
 control ReducersGroupQuery <<Actor>>
 control ReducerWorker <<Actor>>
 control MapperWorker <<Actor>>
-collections MemCache
+control MemCache <<Actor>>
+control "Google Directions API Actor"  as GDAA <<Actor>>
+control MongoActor <<Actor>>
 end box
 database Mongo
-boundary "Google Geolocation API" as GGA
+boundary "Google Directions API" as GDA
 
 autonumber "<b>[000]"
 
@@ -40,6 +42,15 @@ Supervisor -> Server : Sends "CreateInfrastructure" message
 Server -> Master : Creates actor
 activate Master
 Server -> Master : Sends "CreateInfrastructure" message
+
+Master -> MemCache : Creates actor
+activate MemCache
+
+Master -> GDAA : Creates actor
+activate GDAA
+
+Master -> MongoActor : Creates actor
+activate MongoActor
 
 Master -> ReducersGroup : Creates actor
 activate ReducersGroup
@@ -88,6 +99,20 @@ Supervisor -> Server : Forwards request
 
 Server -> Master : Forwards request
 
+Master -> MemCache : Performs cache check for request
+
+alt cache hit
+
+MemCache -> Master : Returns cached result
+
+Master -> RequestHandler : Returns cached result
+
+RequestHandler -> Client : Returns cached result
+
+else cache miss
+
+MemCache -> Master : Returns cache miss message
+
 Master -> MappersGroup : Forwards request
 
 MappersGroup -> MappersGroupQuery : Creates actor
@@ -98,6 +123,14 @@ MappersGroup -> MappersGroupQuery : Forwards request
 MappersGroupQuery -> MapperWorker : Forwards request
 
 alt MapperWorker responds with result
+
+MapperWorker -> MongoActor : Find all stored results matching mapper hash
+
+MongoActor -> Mongo : Find all stored results matching mapper hash
+
+Mongo --> MongoActor : Returns matching results
+
+MongoActor -> MapperWorker : Returns matching results
 
 MapperWorker -> MappersGroupQuery : Sends map result
 
@@ -116,7 +149,6 @@ MappersGroupQuery -> MappersGroupQuery : Stops self
 end
 
 MappersGroupQuery -> Master : Sends "RespondAllMapResults" message
-
 deactivate MappersGroupQuery
 
 Master -> ReducersGroup : Sends "CalculateReduction" message
@@ -140,20 +172,44 @@ ReducersGroupQuery -> ReducersGroupQuery : Stops self
 
 else Responses collection times out
 
+
 ReducersGroupQuery -> ReducersGroupQuery : Stops self
 
 end
 
 ReducersGroupQuery -> Master : Sends "RespondAllReduceResults" message
-
 deactivate ReducersGroupQuery
 
 Master -> Master : Calculates euclidean minimum
+
+alt No result
+
+Master -> GDAA : Invokes actor to get results from Google Directions API
+
+GDAA -> GDA : Invokes Google Directions API for result
+
+GDA -> GDAA : Gets result
+
+GDAA -> Master : Returns result
+
+Master -> MemCache : Updates the cache with the result
+
+Master -> MongoActor : Updates the db with the result
+
+MongoActor -> Mongo : Updates the db with the result
+
+else Result
+
+Master -> MemCache : Updates cache with the result
+
+end
 
 Master -> RequestHandler : Sends result
 
 RequestHandler -> Client : Sends result
 deactivate RequestHandler
+
+end
 
 == Shutdown ==
 

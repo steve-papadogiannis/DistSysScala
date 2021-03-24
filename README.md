@@ -15,6 +15,8 @@ A small project that takes directions queries and produces directions results in
 
 ## Sequence Diagram ## 
 
+![Lifecycle Sequence Diagram](./images/lifecycle.svg)
+
 ## Mongo Setup ##
 
 In `docker/mongo` directory there is a `docker-compose.yml` that 
